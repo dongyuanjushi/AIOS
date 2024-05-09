@@ -54,6 +54,9 @@ def main():
     # agent_process_queue = queue.Queue()
 
     llm_request_responses = multiprocessing.Manager().dict()
+    # llm_request_responses = dict()
+
+    llm_request_responses = multiprocessing.Manager().dict()
 
     llm = llms.LLMKernel(
         llm_name = llm_name,
@@ -76,6 +79,8 @@ def main():
         llm_request_responses = llm_request_responses,
         agent_log_mode = agent_log_mode
     )
+
+    # print(scheduler.cpu_affinity())
 
     scheduler.start()
 
