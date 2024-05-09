@@ -8,8 +8,6 @@ from src.scheduler.rr_scheduler import RRScheduler
 
 from openagi.src.agents.agent_factory import AgentFactory
 
-from openagi.src.agents.agent_process import AgentProcessFactory
-
 import warnings
 
 from src.llm_kernel import llms
@@ -28,6 +26,7 @@ import random
 import numpy as np
 from dotenv import find_dotenv, load_dotenv
 
+import multiprocessing
 
 def parse_global_args():
     parser = argparse.ArgumentParser(description="Parse global parameters")
@@ -65,29 +64,32 @@ def main():
     llm_kernel_log_mode = args.llm_kernel_log_mode
     load_dotenv()
 
+    agent_process_queue = multiprocessing.Queue()
+    # agent_process_queue = queue.Queue()
+
+    llm_request_responses = multiprocessing.Manager().dict()
+
     llm = llms.LLMKernel(
-        llm_name=llm_name,
-        max_gpu_memory=max_gpu_memory,
-        eval_device=eval_device,
-        max_new_tokens=max_new_tokens,
-        log_mode=llm_kernel_log_mode
+        llm_name = llm_name,
+        max_gpu_memory = max_gpu_memory,
+        eval_device = eval_device,
+        max_new_tokens = max_new_tokens,
+        log_mode = llm_kernel_log_mode
     )
 
-    scheduler = RRScheduler(
-        llm=llm,
-        log_mode=scheduler_log_mode
+    scheduler = FIFOScheduler(
+        llm = llm,
+        agent_process_queue = agent_process_queue,
+        llm_request_responses = llm_request_responses,
+        log_mode = scheduler_log_mode
     )
-
-    agent_process_factory = AgentProcessFactory()
 
     agent_factory = AgentFactory(
-        llm=llm,
-        agent_process_queue=scheduler.agent_process_queue,
-        agent_process_factory=agent_process_factory,
-        agent_log_mode=agent_log_mode
+        llm = llm,
+        agent_process_queue = agent_process_queue,
+        llm_request_responses = llm_request_responses,
+        agent_log_mode = agent_log_mode
     )
-
-    agent_thread_pool = ThreadPoolExecutor(max_workers=2000)
 
     scheduler.start()
 
@@ -99,30 +101,32 @@ def main():
         agent_num = int(agent[1])
         agent_list.append((agent_name, agent_num))
 
-    def execute_mode(mode, agent_list, agent_factory, agent_thread_pool=None):
+    def execute_mode(mode, agent_list, agent_factory, llm_request_responses):
         print(f"**** {mode} Execution Statistics Starts ****\n")
         if mode == "concurrent":
-            metrics = get_numbers_concurrent(agent_list, agent_factory, agent_thread_pool)
+            metrics = get_numbers_concurrent(agent_list, agent_factory, llm_request_responses)
         else:
-            metrics = get_numbers_sequential(agent_list, agent_factory)
+            metrics = get_numbers_sequential(agent_list, agent_factory, llm_request_responses)
         print(f"{mode.capitalize()} Metrics:", metrics)
         print(f"**** {mode} Execution Statistics Ends ****\n")
         return metrics
 
     if args.mode == "compare":
-        concurrent_metrics = execute_mode("concurrent", agent_list, agent_factory, agent_thread_pool)
-        sequential_metrics = execute_mode("sequential", agent_list, agent_factory)
+        concurrent_metrics = execute_mode("concurrent", agent_list, agent_factory, llm_request_responses)
+        sequential_metrics = execute_mode("sequential", agent_list, agent_factory, llm_request_responses)
         comparison(concurrent_metrics, sequential_metrics)
+
     elif args.mode == "concurrent-only":
-        execute_mode("concurrent", agent_list, agent_factory, agent_thread_pool)
+        execute_mode("concurrent", agent_list, agent_factory, llm_request_responses)
+
     elif args.mode == "sequential-only":
-        execute_mode("sequential", agent_list, agent_factory)
+        execute_mode("sequential", agent_list, agent_factory, llm_request_responses)
     else:
         print("Error: Invalid mode")
 
     clean_cache(root_directory="./")
 
-    scheduler.stop()
+    scheduler.terminate()
 
 
 if __name__ == "__main__":

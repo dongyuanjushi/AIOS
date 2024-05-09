@@ -54,7 +54,6 @@ def main():
     # agent_process_queue = queue.Queue()
 
     llm_request_responses = multiprocessing.Manager().dict()
-    # llm_request_responses = dict()
 
     llm = llms.LLMKernel(
         llm_name = llm_name,
@@ -71,10 +70,6 @@ def main():
         log_mode = scheduler_log_mode
     )
 
-    # scheduler_process = psutil.Process(scheduler.pid)
-    # print(f"Scheduler running on CPU:", scheduler_process.cpu_num())
-    # print(multiprocessing.cpu_count())
-
     agent_factory = AgentFactory(
         llm = llm,
         agent_process_queue = agent_process_queue,
@@ -82,69 +77,44 @@ def main():
         agent_log_mode = agent_log_mode
     )
 
-    # print(scheduler.cpu_affinity())
     scheduler.start()
 
-    agent_a = agent_factory.activate_agent(
-        agent_name = "MathAgent",
-        task_input = "Solve the problem that Albert is wondering how much pizza he can eat in one day. He buys 2 large pizzas and 2 small pizzas. A large pizza has 16 slices and a small pizza has 8 slices. If he eats it all, how many pieces does he eat that day?"
-    )
+    agent_lists = [
+        [
+            "MathAgent",
+            "Solve the problem that Albert is wondering how much pizza he can eat in one day. He buys 2 large pizzas and 2 small pizzas. A large pizza has 16 slices and a small pizza has 8 slices. If he eats it all, how many pieces does he eat that day?"
+        ],
+        [
+            "MathAgent",
+            "Mark has 4 bags of marbles, each with 25 marbles. He gives 3 marbles to each of his 5 friends. How many marbles does he have left?"
+        ],
+        [
+            "RecAgent",
+            "I want to take a tour to New York during the spring break, recommend some restaurants around for me."
+        ],
+        [
+            "NarrativeAgent",
+            "I want to take a tour to New York during the spring break, recommend some restaurants around for me."
+        ]
+    ]
 
-    agent_a.start()
+    agent_tasks = []
 
-    agent_b = agent_factory.activate_agent(
-        agent_name = "MathAgent",
-        task_input = "Mark has 4 bags of marbles, each with 25 marbles. He gives 3 marbles to each of his 5 friends. How many marbles does he have left?"
-    )
+    for agent_name, task_input in agent_lists:
+        agent = agent_factory.activate_agent(
+            agent_name = agent_name,
+            task_input = task_input
+        )
+        agent_tasks.append(agent)
 
-    agent_b.start()
+        agent.start()
 
-    agent_a.join()
+    for agent in agent_tasks:
+        agent.join()
 
-    agent_b.join()
+    for agent in agent_tasks:
+        print(llm_request_responses.get(agent.get_aid()))
 
-    # rec_agent = agent_factory.run_agent(
-    #     agent_name = "RecAgent",
-    #     task_input = "I want to take a tour to New York during the spring break, recommend some restaurants around for me."
-    # )
-
-    # agent_tasks = [math_agent, rec_agent]
-
-    # for agent_task in agent_tasks:
-    #     agent_task.start()
-    # math_agent.start()
-
-
-    # math_agent.join()
-    # agent_thread_pool = ThreadPoolExecutor(max_workers=64)
-    # agent_thread_pool = ProcessPoolExecutor(max_workers=64)
-
-
-    # # construct agents
-    # math_agent = agent_thread_pool.submit(
-    #     agent_factory.run_agent,
-    #     "MathAgent",
-    #     "Solve the problem that Albert is wondering how much pizza he can eat in one day. He buys 2 large pizzas and 2 small pizzas. A large pizza has 16 slices and a small pizza has 8 slices. If he eats it all, how many pieces does he eat that day?"
-    # )
-
-    # narrative_agent = agent_thread_pool.submit(
-    #     agent_factory.run_agent,
-    #     "NarrativeAgent",
-    #     "Craft a tale about a valiant warrior on a quest to uncover priceless treasures hidden within a mystical island."
-    # )
-
-    # rec_agent = agent_thread_pool.submit(
-    #     agent_factory.run_agent,
-    #     "RecAgent", "I want to take a tour to New York during the spring break, recommend some restaurants around for me."
-    # )
-
-    # agent_tasks = [math_agent, narrative_agent, rec_agent]
-
-    # for r in as_completed(agent_tasks):
-    #     res = r.result()
-
-    # scheduler.join()
-    # scheduler.stop()
     scheduler.terminate()
 
     clean_cache(root_directory="./")
