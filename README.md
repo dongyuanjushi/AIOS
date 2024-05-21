@@ -59,11 +59,8 @@ If you use LLM APIs, you need to setup your API key such as [OpenAI API Key](htt
 export OPENAI_API_KEY=<YOUR OPENAI API KEY>
 export GEMINI_API_KEY=<YOUR GEMINI API KEY>
 ```
-If you use external tool APIs in your agents, you need to set up your API keys as follows:
-```bash
-export RAPID_API_KEY=""
-export WOLFRAM_ALPHA_APPID=""
-```
+If you use external API tools in your agents, please refer to the [How to setup external tools](https://github.com/agiresearch/OpenAGI/blob/main/tools.md).
+
 You can also create .env file from the .env.example file, and then use dotenv to load the environment variables using .env file into your application's environment at runtime.
 
 ```bash
