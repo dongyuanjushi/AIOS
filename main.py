@@ -66,7 +66,7 @@ def main():
         log_mode = llm_kernel_log_mode
     )
 
-    scheduler = RRScheduler(
+    scheduler = FIFOScheduler(
         llm = llm,
         agent_process_queue = agent_process_queue,
         llm_request_responses = llm_request_responses,
@@ -86,20 +86,24 @@ def main():
 
     agent_lists = [
         [
-            "MathAgent",
-            "Solve the problem that Albert is wondering how much pizza he can eat in one day. He buys 2 large pizzas and 2 small pizzas. A large pizza has 16 slices and a small pizza has 8 slices. If he eats it all, how many pieces does he eat that day?"
+            "TravelAgent",
+            "I want to take a trip to Paris, France from July 4th to July 10th 2024 and I am traveling from New York City. Help me plan this trip."
         ],
         [
             "MathAgent",
-            "Mark has 4 bags of marbles, each with 25 marbles. He gives 3 marbles to each of his 5 friends. How many marbles does he have left?"
+            "Convert 15000 MXN to Canadian Dollars and find out how much it would be in USD if 1 CAD equals 0.79 USD."
+        ],
+        [
+            "AcademicAgent",
+            "Summarize recent advancements in quantum computing from the past five years."
         ],
         [
             "RecAgent",
-            "I want to take a tour to New York during the spring break, recommend some restaurants around for me."
+            "Recommend two movies with groundbreaking visual effects released in the last fifteen years ranked between 1 and 20 with ratings above 8.0."
         ],
         [
-            "NarrativeAgent",
-            "I want to take a tour to New York during the spring break, recommend some restaurants around for me."
+            "CreationAgent",
+            "Create an image of a lush jungle with an ancient temple, evoking a sense of mystery and adventure."
         ]
     ]
 

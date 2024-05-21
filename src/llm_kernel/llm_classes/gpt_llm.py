@@ -35,22 +35,18 @@ class GPTLLM(BaseLLMKernel):
         #     level = "executing"
         # )
         time.sleep(2)
-        result = self.model.chat.completions.create(
+        response = self.model.chat.completions.create(
             model=self.model_name,
             messages=[
                 {"role": "user", "content": prompt}
             ],
-            tools = agent_process.message.tools,
-            tool_choice = "required" if agent_process.message.tools else None
+            tools = llm_request.message.tools,
+            tool_choice = "required" if llm_request.message.tools else None
         )
 
-        # print(response.choices[0].message)
-        agent_process.set_response(
-            Response(
-                response_message = response.choices[0].message.content,
-                tool_calls = response.choices[0].message.tool_calls
-            )
+        llm_request.set_status("done")
+        llm_request.set_end_time(time.time())
+        return Response(
+            response_message = response.choices[0].message.content,
+            tool_calls = response.choices[0].message.tool_calls
         )
-        agent_process.set_status("done")
-        agent_process.set_end_time(time.time())
-        return

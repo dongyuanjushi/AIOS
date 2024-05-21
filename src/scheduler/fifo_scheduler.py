@@ -9,7 +9,7 @@ class FIFOScheduler(BaseScheduler):
         BaseScheduler.__init__(self, llm, agent_process_queue, llm_request_responses, log_mode)
 
     def run(self):
-        while True:
+        while self.is_active:
             # time.sleep(1)
             if not self.agent_process_queue.empty():
                 # print("active")

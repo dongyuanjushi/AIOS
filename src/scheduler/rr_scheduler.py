@@ -25,7 +25,7 @@ class RRScheduler(BaseScheduler):
         # all_cpus = list(range(os.cpu_count()))
         # os.sched_setaffinity(0, all_cpus)  # 0 means current process
 
-        while True:
+        while self.is_active:
             if not self.agent_process_queue.empty():
                 # print("active")
                 llm_request = self.agent_process_queue.get()

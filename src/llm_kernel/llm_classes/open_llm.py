@@ -78,16 +78,17 @@ class OpenLLM(BaseLLMKernel):
                 self.context_manager.clear_restoration(
                     pid
                 )
-            llm_request.set_response(
-                Response(
-                    response_message=result
-                )
-            )
+            # llm_request.set_response(
+            #     Response(
+            #         response_message=result
+            #     )
+            # )
             llm_request.set_status("done")
-            return result
+            return Response(
+                response_message=result
+            )
 
         else:
-
             self.context_manager.gen_snapshot(
                 pid,
                 context = {

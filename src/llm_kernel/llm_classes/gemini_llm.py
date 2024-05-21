@@ -44,13 +44,10 @@ class GeminiLLM(BaseLLMKernel):
         )
         try:
             result = outputs.candidates[0].content.parts[0].text
-            agent_process.set_response(
-                Response(
-                    response_message = result
-                )
-            )
         except IndexError:
             raise IndexError(f"{self.model_name} can not generate a valid result, please try again")
 
         llm_request.set_status("done")
-        return result
+        return Response(
+            response_message = result
+        )

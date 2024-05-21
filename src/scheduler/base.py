@@ -21,14 +21,19 @@ import multiprocessing
 
 import threading
 
-class BaseScheduler(multiprocessing.Process):
+class BaseScheduler(threading.Thread):
     def __init__(self, llm: LLMKernel, agent_process_queue, llm_request_responses, log_mode):
         super().__init__()
         self.log_mode = log_mode
+        self.is_active = False
         self.logger = self.setup_logger()
         self.agent_process_queue = agent_process_queue
         self.llm_request_responses = llm_request_responses
         self.llm = llm
+
+    def start(self):
+        self.is_active = True
+        super().start()
 
     def run(self):
         pass
@@ -39,3 +44,6 @@ class BaseScheduler(multiprocessing.Process):
 
     def execute_request(self, llm_request):
         pass
+
+    def terminate(self):
+        self.is_active = False
