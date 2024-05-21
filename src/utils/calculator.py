@@ -13,8 +13,8 @@ def load_agent_tasks(agent_name):
 def get_numbers_concurrent(agent_list, agent_factory, llm_request_responses):
     agent_tasks = []
     for agent_name, agent_num in agent_list:
-        task_input = load_agent_tasks(agent_name=agent_name)[0]
-        for i in range(agent_num):
+        task_inputs = load_agent_tasks(agent_name=agent_name)[0:agent_num]
+        for i, task_input in enumerate(task_inputs):
             agent = agent_factory.activate_agent(
                 agent_name = agent_name,
                 task_input = task_input
@@ -83,23 +83,26 @@ def get_numbers_sequential(agent_list, agent_factory, llm_request_responses):
 
     # Collect data
     accumulated_time = 0
-    for agent in agent_tasks:
-        output = llm_request_responses.pop(agent.get_aid())
-        agent_factory.deactivate_agent(agent.get_aid())
-        agent.terminate()
+    for agent_name, agent_num in agent_list:
+        task_inputs = load_agent_tasks(agent_name=agent_name)[0: agent_num]  # Assuming first task relevant
+        for i, task_input in enumerate(task_inputs):
+            output = agent_factory.run_agent(agent_name=agent_name, task_input=task_input)
 
-        stats['agent_waiting_times'].append(output["agent_waiting_time"] + accumulated_time)
+            agent_turnaround_time = output["agent_turnaround_time"] + accumulated_time
+            agent_waiting_time = output["agent_waiting_time"] + accumulated_time
+            rounds = output["rounds"]
 
-        stats['agent_turnaround_times'].append(output["agent_turnaround_time"] + accumulated_time)
+            # Adjust times by the accumulated time
+            request_waiting_times = output["request_waiting_times"]
+            request_turnaround_times = output["request_turnaround_times"]
+            request_waiting_times[0] += accumulated_time
+            request_turnaround_times[0] += accumulated_time
 
-        output["request_waiting_times"][0] += accumulated_time
-        stats['request_waiting_times'].extend(
-            output["request_waiting_times"]
-        )
-
-        output["request_turnaround_times"][0] += accumulated_time
-
-        stats['request_turnaround_times'].extend(output["request_turnaround_times"])
+            # Append to lists
+            stats['turnaround_times'].append(agent_turnaround_time)
+            stats['waiting_times'].append(agent_waiting_time)
+            stats['request_waiting_times'].extend(request_waiting_times)
+            stats['request_turnaround_times'].extend(request_turnaround_times)
 
         accumulated_time += (output['agent_turnaround_time'] - output["agent_waiting_time"])
 

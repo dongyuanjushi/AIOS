@@ -27,8 +27,9 @@ AIOS, a Large Language Model (LLM) Agent operating system, embeds large language
 ## ✈️ 3. Getting Started
 
 ### 3.1 Installation
-To run AIOS, you will need to install our agent creation package, OpenAGI.
-**Git clone AIOS and OpenAGI**
+To run AIOS, you will need to install our agent creation package, [OpenAGI](https://github.com/agiresearch/OpenAGI).
+
+**Git clone AIOS and [OpenAGI]((https://github.com/agiresearch/OpenAGI))**
 ```bash
 git clone https://github.com/agiresearch/AIOS.git
 git clone https://github.com/agiresearch/OpenAGI.git
@@ -58,6 +59,7 @@ If you use LLM APIs, you need to setup your API key such as [OpenAI API Key](htt
 export OPENAI_API_KEY=<YOUR OPENAI API KEY>
 export GEMINI_API_KEY=<YOUR GEMINI API KEY>
 ```
+If you use external API tools in your agents, please refer to the [How to setup external tools](https://github.com/agiresearch/OpenAGI/blob/main/tools.md).
 
 You can also create .env file from the .env.example file, and then use dotenv to load the environment variables using .env file into your application's environment at runtime.
 
@@ -89,9 +91,9 @@ You can use an open-source model on an Apple MacBook with Ollama. First, you wil
 ```bash
 ollama pull llama3
 ```
-Then, you can run the bash script to start using AIOS with llama3 and Ollama on your MacBook:
+Then, you can run the Python script with the input parameter to start using AIOS with Llama3 and Ollama on your MacBook:
 ```bash
-bash scripts/run/ollama_llama3.sh
+python main.py --llm_name ollama/llama3
 ```
 #### (2) Interactive Mode
 In the deployment mode, the outputs of running agents are stored in files. And in this mode, you are provided with multiple commands to run agents and see resource usage of agents (e.g., run \<xxxAgent\>: \<YOUR TASK\>, print agent).
@@ -155,7 +157,7 @@ python eval.py --llm_name gpt-4 --agents MathAgent:1,NarrativeAgent:1,RecAgent:1
 ```
 
 ## 🚀 5. Contributions
-AIOS is dedicated to facilitating LLM agents' development and deployment in a systematic way, collaborators and contributions are always welcome to foster a cohesive, effective and efficient AIOS-Agent ecosystem!
+AIOS is dedicated to facilitating the development and deployment of LLM agents in a systematic way, collaborators and contributions are always welcome to foster a cohesive, effective and efficient AIOS-Agent ecosystem!
 
 For detailed information on how to contribute, see [CONTRIBUTE](https://github.com/agiresearch/AIOS/blob/main/CONTRIBUTE.md). If you would like to contribute to the codebase, [issues](https://github.com/agiresearch/AIOS/issues) or [pull requests](https://github.com/agiresearch/AIOS/pulls) are always welcome!
 

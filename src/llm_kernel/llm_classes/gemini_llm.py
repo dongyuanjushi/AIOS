@@ -3,6 +3,8 @@ import re
 from .base_llm import BaseLLMKernel
 import time
 from ...utils.utils import get_from_env
+
+from ...utils.message import Response
 class GeminiLLM(BaseLLMKernel):
     def __init__(self, llm_name: str,
                  max_gpu_memory: dict = None,
@@ -33,13 +35,20 @@ class GeminiLLM(BaseLLMKernel):
                 llm_request,
                 temperature=0.0) -> None:
         assert re.search(r'gemini', self.model_name, re.IGNORECASE)
-        prompt = llm_request.prompt
+        prompt = llm_request.message.prompt
+        # TODO: add tool calling
 
+        time.sleep(2)
         outputs = self.model.generate_content(
             prompt
         )
         try:
             result = outputs.candidates[0].content.parts[0].text
+            agent_process.set_response(
+                Response(
+                    response_message = result
+                )
+            )
         except IndexError:
             raise IndexError(f"{self.model_name} can not generate a valid result, please try again")
 

@@ -66,7 +66,7 @@ def main():
         log_mode = llm_kernel_log_mode
     )
 
-    scheduler = FIFOScheduler(
+    scheduler = RRScheduler(
         llm = llm,
         agent_process_queue = agent_process_queue,
         llm_request_responses = llm_request_responses,

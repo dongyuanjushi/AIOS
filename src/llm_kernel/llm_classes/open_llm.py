@@ -4,6 +4,8 @@ from .base_llm import BaseLLMKernel
 import time
 from transformers import AutoTokenizer
 
+from ...utils.message import Response
+
 class OpenLLM(BaseLLMKernel):
 
     def load_llm_and_tokenizer(self) -> None:
@@ -46,7 +48,8 @@ class OpenLLM(BaseLLMKernel):
                 timestamp = llm_request.get_time_limit()
             )
         else:
-            prompt = llm_request.prompt
+            # prompt = agent_process.prompt
+            prompt = llm_request.message.prompt
             input_ids = self.tokenizer.encode(prompt, return_tensors="pt")
             attention_masks = input_ids != self.tokenizer.pad_token_id
             input_ids = input_ids.to(self.eval_device)
@@ -64,7 +67,7 @@ class OpenLLM(BaseLLMKernel):
 
         output_ids = outputs["result"]
 
-        prompt = llm_request.prompt
+        prompt = llm_request.message.prompt
         result = self.tokenizer.decode(output_ids, skip_special_tokens=True)
         result = result[len(prompt)+1: ]
 
@@ -75,7 +78,11 @@ class OpenLLM(BaseLLMKernel):
                 self.context_manager.clear_restoration(
                     pid
                 )
-            # agent_process.set_response(result)
+            llm_request.set_response(
+                Response(
+                    response_message=result
+                )
+            )
             llm_request.set_status("done")
             return result
 
@@ -93,34 +100,6 @@ class OpenLLM(BaseLLMKernel):
             llm_request.set_status("suspend")
 
         return result
-
-    def generate(self,
-                 input_ids: torch.Tensor = None,
-                 attention_masks: torch.Tensor = None,
-                 beams: torch.Tensor = None,
-                 beam_scores: torch.Tensor = None,
-                 beam_attention_masks: torch.Tensor = None,
-                 beam_size: int = None,
-                 max_new_tokens: int = None,
-                 search_mode: str = None,
-                 start_idx: int = 0,
-                 timestamp: int = None
-                 ):
-        if search_mode == "beam_search":
-            output_ids = self.beam_search(
-                input_ids = input_ids,
-                attention_masks = attention_masks,
-                beam_size = beam_size,
-                beams = beams,
-                beam_scores = beam_scores,
-                beam_attention_masks = beam_attention_masks,
-                max_new_tokens = max_new_tokens,
-                start_idx = start_idx,
-                timestamp = timestamp
-            )
-            return output_ids
-        else:
-            return NotImplementedError
 
     def generate(self,
                  input_ids: torch.Tensor = None,
