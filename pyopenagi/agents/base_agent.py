@@ -134,11 +134,14 @@ class BaseAgent:
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
         for tool_call in tool_calls:
-            for k in tool_call["parameters"]:
-                if "path" in k:
-                    path = tool_call["parameters"][k]
-                    if not path.startswith(save_dir):
-                        tool_call["parameters"][k] = os.path.join(save_dir, os.path.basename(path))
+            try:
+                for k in tool_call["parameters"]:
+                    if "path" in k:
+                        path = tool_call["parameters"][k]
+                        if not path.startswith(save_dir):
+                            tool_call["parameters"][k] = os.path.join(save_dir, os.path.basename(path))
+            except Exception:
+                continue
         return tool_calls
 
     def snake_to_camel(self, snake_str):
@@ -247,7 +250,7 @@ class BaseAgent:
             str: LLM response of Agent Process
         """
         while agent_process.get_response() is None:
-            time.sleep(0.2)
+            time.sleep(0.1)
 
         return agent_process.get_response()
 

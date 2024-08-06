@@ -5,7 +5,7 @@
         "Provide care instructions, identify plant problems, and offer reminders for plant care tasks."
     ],
     "tools": [
-        "wikipedia/wikipedia"
+        "google/google_search"
     ],
     "meta": {
         "author": "example",

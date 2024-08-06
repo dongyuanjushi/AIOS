@@ -82,9 +82,15 @@ class ReactAgent(BaseAgent):
         # print(tool_calls)
         for tool_call in tool_calls:
             # print(tool_call)
-            function_name = tool_call["name"]
-            function_to_call = self.tool_list[function_name]
-            function_params = tool_call["parameters"]
+            try:
+                function_name = tool_call["name"]
+                function_to_call = self.tool_list[function_name]
+                function_params = tool_call["parameters"]
+
+            except Exception:
+                actions.append("I fail to call any tools.")
+                observations.append("The tool name or tool parameter is invalid.")
+                success = False
 
             try:
                 function_response = function_to_call.run(function_params)
@@ -93,7 +99,7 @@ class ReactAgent(BaseAgent):
 
             except Exception:
                 actions.append("I fail to call any tools.")
-                observations.append(f"The tool parameter {function_params} is invalid.")
+                observations.append("The tool parameter is invalid.")
                 success = False
 
         return actions, observations, success

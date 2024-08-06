@@ -21,7 +21,7 @@ class PlantCareAssistant(ReactAgent):
             },
             {
                 "message": "Identify plant needs (light, water, fertilizer)",
-                "tool_use": ["wikipedia"]
+                "tool_use": ["google_search"]
             },
             {
                 "message": "Create a plant care schedule",

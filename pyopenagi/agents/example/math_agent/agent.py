@@ -16,7 +16,7 @@ class MathAgent(ReactAgent):
         workflow = [
             {
                 "message": "Identify the problem type and relevant formulas",
-                "tool_use": ["wikipedia"]
+                "tool_use": ["google_search"]
             },
             {
                 "message": "Break down the problem into steps",

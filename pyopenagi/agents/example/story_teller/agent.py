@@ -12,6 +12,8 @@ class StoryTeller(ReactAgent):
         # self.workflow_mode = "automatic"
         self.workflow_mode = "manual"
 
+
+
     def manual_workflow(self):
         workflow = [
             {
@@ -43,10 +45,14 @@ class StoryTeller(ReactAgent):
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
         for tool_call in tool_calls:
-            if "path" in tool_call["parameters"]:
-                path = tool_call["parameters"]["path"]
-                if not path.startswith(save_dir):
-                    tool_call["parameters"]["path"] = os.path.join(save_dir, os.path.basename(path))
+            try:
+                for k in tool_call["parameters"]:
+                    if "path" in k:
+                        path = tool_call["parameters"][k]
+                        if not path.startswith(save_dir):
+                            tool_call["parameters"][k] = os.path.join(save_dir, os.path.basename(path))
+            except Exception:
+                continue
         return tool_calls
 
     def run(self):

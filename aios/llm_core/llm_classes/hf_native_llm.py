@@ -21,6 +21,7 @@ class HfNativeLLM(BaseLLM):
         self.auth_token = get_from_env("HF_AUTH_TOKENS")
 
         """ only casual lms for now """
+        self.model_type = "causal_lm"
         self.model = MODEL_CLASS[self.model_type].from_pretrained(
             self.model_name,
             device_map="auto",
