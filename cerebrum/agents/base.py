@@ -1,78 +1,40 @@
 import os
-
 import json
-
-from pyopenagi.manager.manager import AgentManager
-
-from .agent_process import (
-    AgentProcess
-)
-
 import time
 
-from threading import Thread
-
-import threading
-
-from ..utils.logger import AgentLogger
-
-from ..utils.chat_template import Query
-
+from cerebrum.utils.chat import Query
+from cerebrum.runtime.process import AgentProcessor
 import importlib
 
-from aios.hooks.stores._global import global_llm_req_queue_add_message
-
 class BaseAgent:
-    def __init__(self, agent_name, task_input, agent_process_factory, log_mode: str):
+    def __init__(self, 
+                 agent_name: str, 
+                 task_input: str, 
+                 config: dict):
         # super().__init__()
         self.agent_name = agent_name
-        self.manager = AgentManager('https://my.aios.foundation/')
-
-        author, name, version = self.agent_name.split('/')
-
-        path_version = self.manager._version_to_path(version)
-
-        self.config = self.manager._get_agent_metadata(
-            f'{self.manager.cache_dir / author / name / path_version}')
-        
-        print(self.config)
-
-        # self.config = self.load_config()
-        self.tool_names = self.config["tools"]
-
-        self.agent_process_factory = agent_process_factory
+        self.config = config
 
         self.tool_list = dict()
         self.tools = []
-        self.tool_info = (
-            []
-        )  # simplified information of the tool: {"name": "xxx", "description": "xxx"}
+        self.tool_info = ([])  # simplified information of the tool: {"name": "xxx", "description": "xxx"}
 
-        self.load_tools(self.tool_names)
-
-        self.start_time = None
-        self.end_time = None
-        self.request_waiting_times: list = []
-        self.request_turnaround_times: list = []
-        self.task_input = task_input
-        self.messages = []
-        self.workflow_mode = "manual"  # (mannual, automatic)
+        self.load_tools(self.config['tools'])
         self.rounds = 0
 
-        self.log_mode = log_mode
-        self.logger = self.setup_logger()
+        self.task_input = task_input
+        self.messages = []
+        self.workflow_mode = "manual"  # (manual, automatic)
 
-        self.set_status("active")
-        self.set_created_time(time.time())
+        self.llm = None
+
 
     def run(self):
-        """Execute each step to finish the task."""
-        # self.set_aid(threading.get_ident())
-        self.logger.log(f"{self.agent_name} starts running. Agent ID is {self.get_aid()}\n", level="info")
+        raise NotImplementedError
 
-    # can be customization
     def build_system_instruction(self):
         pass
+
 
     def check_workflow(self, message):
         try:
@@ -92,20 +54,8 @@ class BaseAgent:
 
     def automatic_workflow(self):
         for i in range(self.plan_max_fail_times):
-            response, start_times, end_times, waiting_times, turnaround_times = (
-                self.get_response(
-                    query=Query(
-                        messages=self.messages, tools=None, message_return_type="json"
-                    )
-                )
-            )
-
-            if self.rounds == 0:
-                self.set_start_time(start_times[0])
-
-            self.request_waiting_times.extend(waiting_times)
-            self.request_turnaround_times.extend(turnaround_times)
-
+            response = AgentProcessor.process_response(query=Query(messages=self.messages, tools=None, message_return_type="json"), llm=self.llm)
+            
             workflow = self.check_workflow(response.response_message)
 
             self.rounds += 1
@@ -177,48 +127,6 @@ class BaseAgent:
 
         return pre_selected_tools
 
-    def setup_logger(self):
-        logger = AgentLogger(self.agent_name, self.log_mode)
-        return logger
-
-    def load_config(self):
-        script_path = os.path.abspath(__file__)
-        script_dir = os.path.dirname(script_path)
-        config_file = os.path.join(script_dir, self.agent_name, "config.json")
-        with open(config_file, "r") as f:
-            config = json.load(f)
-            return config
-
-    # the default method used for getting response from AIOS
-    def get_response(self, query, temperature=0.0):
-
-        # thread = CustomizedThread(target=self.query_loop, args=(query, ))
-        # thread.start()
-        # return thread.join()
-        return self.query_loop(query)
-
-    def query_loop(self, query):
-        agent_process = self.create_agent_request(query)
-
-        while agent_process.get_status() != "done":
-            # thread = Thread(target=self.listen, args=(agent_process, ))
-            current_time = time.time()
-            # reinitialize agent status
-            agent_process.set_created_time(current_time)
-            agent_process.set_response(None)
-
-            global_llm_req_queue_add_message(agent_process)
-
-            # thread.start()
-            # thread.join()
-            agent_process.start()
-            agent_process.join()
-
-            completed_response = agent_process.get_response()
-
-
-        return response
-
     def create_agent_request(self, query):
         agent_process = self.agent_process_factory.activate_agent_process(
             agent_name=self.agent_name, query=query
@@ -236,29 +144,4 @@ class BaseAgent:
     def get_agent_name(self):
         return self.agent_name
 
-    def set_status(self, status):
-        """
-        Status type: Waiting, Running, Done, Inactive
-        """
-        self.status = status
 
-    def get_status(self):
-        return self.status
-
-    def set_created_time(self, time):
-        self.created_time = time
-
-    def get_created_time(self):
-        return self.created_time
-
-    def set_start_time(self, time):
-        self.start_time = time
-
-    def get_start_time(self):
-        return self.start_time
-
-    def set_end_time(self, time):
-        self.end_time = time
-
-    def get_end_time(self):
-        return self.end_time

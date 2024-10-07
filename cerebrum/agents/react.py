@@ -1,29 +1,19 @@
-
-from .base_agent import BaseAgent
+from cerebrum.agents.base import BaseAgent
+from cerebrum.runtime.process import AgentProcessor
+from cerebrum.utils.chat import Query
 
 import time
-
-from .utils.chat_template import Query
-
 import json
 
 class ReactAgent(BaseAgent):
-    def __init__(self,
-                 agent_name,
-                 task_input,
-                 agent_process_factory,
-                 log_mode: str
-        ):
-        BaseAgent.__init__(
-            self,
-            agent_name,
-            task_input,
-            agent_process_factory,
-            log_mode
-        )
+    def __init__(self, agent_name: str, task_input: str, config: dict):
+        BaseAgent.__init__(self, agent_name, task_input, config)
 
         self.plan_max_fail_times = 3
         self.tool_call_max_fail_times = 3
+
+        self.llm = None
+        
 
     def build_system_instruction(self):
         prefix = "".join(
@@ -109,7 +99,6 @@ class ReactAgent(BaseAgent):
         self.messages.append(
             {"role": "user", "content": task_input}
         )
-        self.logger.log(f"{task_input}\n", level="info")
 
         workflow = None
 
@@ -128,9 +117,9 @@ class ReactAgent(BaseAgent):
         )
 
         if workflow:
-            self.logger.log(f"Generated workflow is: {workflow}\n", level="info")
+            print(f"Generated workflow is: {workflow}\n", level="info")
         else:
-            self.logger.log("Fail to generate a valid workflow. Invalid JSON?\n", level="info")
+            print("Fail to generate a valid workflow. Invalid JSON?\n", level="info")
 
         try:
             if workflow:
@@ -151,23 +140,13 @@ class ReactAgent(BaseAgent):
                     else:
                         selected_tools = None
 
-                    response, start_times, end_times, waiting_times, turnaround_times = self.get_response(
-                        query = Query(
-                            messages = self.messages,
-                            tools = selected_tools
-                        )
-                    )
-
-                    if self.rounds == 0:
-                        self.set_start_time(start_times[0])
+                    response = AgentProcessor.process_response(query=Query(messages=self.messages, tools=None, message_return_type="json"), llm=self.llm)
 
                     # execute action
                     response_message = response.response_message
 
                     tool_calls = response.tool_calls
 
-                    self.request_waiting_times.extend(waiting_times)
-                    self.request_turnaround_times.extend(turnaround_times)
 
                     if tool_calls:
                         for _ in range(self.plan_max_fail_times):
@@ -196,21 +175,14 @@ class ReactAgent(BaseAgent):
                         final_result = self.messages[-1]
 
                     step_result = self.messages[-1]["content"]
-                    self.logger.log(f"At step {i + 1}, {step_result}\n", level="info")
+                    print(f"At step {i + 1}, {step_result}\n", level="info")
 
                     self.rounds += 1
-
-                self.set_status("done")
-                self.set_end_time(time=time.time())
 
                 return {
                     "agent_name": self.agent_name,
                     "result": final_result,
                     "rounds": self.rounds,
-                    "agent_waiting_time": self.start_time - self.created_time,
-                    "agent_turnaround_time": self.end_time - self.created_time,
-                    "request_waiting_times": self.request_waiting_times,
-                    "request_turnaround_times": self.request_turnaround_times,
                 }
 
             else:
@@ -218,10 +190,6 @@ class ReactAgent(BaseAgent):
                     "agent_name": self.agent_name,
                     "result": "Failed to generate a valid workflow in the given times.",
                     "rounds": self.rounds,
-                    "agent_waiting_time": None,
-                    "agent_turnaround_time": None,
-                    "request_waiting_times": self.request_waiting_times,
-                    "request_turnaround_times": self.request_turnaround_times,
                 }
         except Exception as e:
             print(e)
