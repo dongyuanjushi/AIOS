@@ -1,5 +1,3 @@
-# agent_manager
-
 import importlib
 import os
 import json
@@ -10,6 +8,9 @@ from typing import List, Dict
 import requests
 from pathlib import Path
 import platformdirs
+import importlib.util
+
+from cerebrum.manager.package import AgentPackage
 
 class AgentManager:
     def __init__(self, base_url: str):
@@ -87,15 +88,20 @@ class AgentManager:
         return []
 
     def _get_cache_path(self, author: str, name: str, version: str) -> Path:
-        return self.cache_dir / author / name / self._version_to_path(version)
+        return self.cache_dir / author / name / f"{self._version_to_path(version)}.agent"
 
     def _save_agent_to_cache(self, agent_data: Dict, cache_path: Path):
-        cache_path.mkdir(parents=True, exist_ok=True)
-        for file_data in agent_data["files"]:
-            file_path = cache_path / file_data["path"]
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(file_path, "wb") as f:
-                f.write(base64.b64decode(file_data["content"]))
+        agent_package = AgentPackage(cache_path)
+        agent_package.metadata = {
+            "author": agent_data["author"],
+            "name": agent_data["name"],
+            "version": agent_data["version"],
+            "license": agent_data["license"],
+            "entry": agent_data["entry"],
+            "module": agent_data["module"]
+        }
+        agent_package.files = {file["path"]: base64.b64decode(file["content"]) for file in agent_data["files"]}
+        agent_package.save()
 
     def _get_agent_files(self, folder_path: str) -> List[Dict[str, str]]:
         files = []
@@ -143,8 +149,10 @@ class AgentManager:
         return response.json()["update_available"]
 
     def check_reqs_installed(self, agent_path: Path) -> bool:
-        reqs_path = agent_path / "meta_requirements.txt"
-        if not reqs_path.exists():
+        agent_package = AgentPackage(agent_path)
+        agent_package.load()
+        reqs_content = agent_package.files.get("meta_requirements.txt")
+        if not reqs_content:
             return True  # No requirements file, consider it as installed
 
         try:
@@ -154,9 +162,7 @@ class AgentManager:
             result = subprocess.run(
                 ['pip', 'list', '--format=freeze'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        with open(reqs_path, "r") as f:
-            reqs = [line.strip().split("==")[0]
-                    for line in f if line.strip() and not line.startswith("#")]
+        reqs = [line.strip().split("==")[0] for line in reqs_content.decode('utf-8').splitlines() if line.strip() and not line.startswith("#")]
 
         output = result.stdout.decode('utf-8')
         installed_packages = [line.split()[0]
@@ -165,12 +171,18 @@ class AgentManager:
         return all(req in installed_packages for req in reqs)
 
     def install_agent_reqs(self, agent_path: Path):
-        reqs_path = agent_path / "meta_requirements.txt"
-        if not reqs_path.exists():
+        agent_package = AgentPackage(agent_path)
+        agent_package.load()
+        reqs_content = agent_package.files.get("meta_requirements.txt")
+        if not reqs_content:
             print("No meta_requirements.txt found. Skipping dependency installation.")
             return
 
-        log_path = agent_path / "deplogs.txt"
+        temp_reqs_path = self.cache_dir / "temp_requirements.txt"
+        with open(temp_reqs_path, "wb") as f:
+            f.write(reqs_content)
+
+        log_path = agent_path.with_suffix('.log')
 
         print(f"Installing dependencies for agent. Writing to {log_path}")
 
@@ -181,28 +193,53 @@ class AgentManager:
                 "pip",
                 "install",
                 "-r",
-                str(reqs_path)
+                str(temp_reqs_path)
             ], stdout=f, stderr=f)
 
+        temp_reqs_path.unlink()  # Remove temporary requirements file
+
     def load_agent(self, author: str, name: str, version: str = "latest"):
-        path_version = self._version_to_path(version)
-        agent_config = self._get_agent_metadata(
-            f'{self.cache_dir / author / name / path_version}')
+        if version == "latest":
+            cached_versions = sorted(self._get_cached_versions(author, name), reverse=True)
+            if not cached_versions:
+                raise ValueError(f"No cached versions found for {author}/{name}")
+            version = self._path_to_version(cached_versions[0])
 
-        entry, module = agent_config.get("build", {}).get(
-            "entry", "agent.py"), agent_config.get("build", {}).get("module", "Agent")
+        agent_path = self._get_cache_path(author, name, version)
+        agent_package = AgentPackage(agent_path)
+        agent_package.load()
 
-        module_name = ".".join(
-            ["agenthub", "cache", author, name, path_version, entry[:-3]])
+        entry_point = agent_package.get_entry_point()
+        module_name = agent_package.get_module_name()
 
-        print(module_name)
+        # Create a temporary directory to extract the agent files
+        temp_dir = self.cache_dir / "temp" / f"{author}_{name}_{version}"
+        temp_dir.mkdir(parents=True, exist_ok=True)
 
-        agent_module = importlib.import_module(module_name)
-        agent_class = getattr(agent_module, module)
+        # Extract agent files to the temporary directory
+        for filename, content in agent_package.files.items():
+            file_path = temp_dir / filename
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            file_path.write_bytes(content)
+
+        # Add the temporary directory to sys.path
+        sys.path.insert(0, str(temp_dir))
+
+        # Load the module
+        spec = importlib.util.spec_from_file_location(module_name, str(temp_dir / entry_point))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        # Remove the temporary directory from sys.path
+        sys.path.pop(0)
+
+        # Get the agent class
+        agent_class = getattr(module, module_name)
 
         return agent_class
 
 
 if __name__ == '__main__':
-    manager = AgentManager('http://localhost:3000/')
-    manager.upload_agent('pyopenagi/agents/example/academic_agent')
+    manager = AgentManager('https://my.aios.foundation/')
+    agent = manager.download_agent('example', 'academic_agent')
+    print(agent)
