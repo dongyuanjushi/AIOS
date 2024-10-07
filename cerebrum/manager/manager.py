@@ -19,6 +19,7 @@ class AgentManager:
         self.cache_dir = Path(platformdirs.user_cache_dir("cerebrum"))
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
+
     def _version_to_path(self, version: str) -> str:
         return version.replace('.', '-')
 
@@ -44,32 +45,26 @@ class AgentManager:
         response.raise_for_status()
         print(f"Agent {payload.get('author')}/{payload.get('name')} (v{payload.get('version')}) uploaded successfully.")
 
-    def download_agent(self, author: str, name: str, version: str = "latest") -> tuple[str, str, str]:
+    def download_agent(self, author: str, name: str, version: str = None) -> tuple[str, str, str]:
+        if version is None:
+            version = "0.0.1"
+
+        cache_path = self._get_cache_path(author, name, version)
+        if cache_path.exists():
+            print(f"Using cached version of {author}/{name} (v{version})")
+            return author, name, version
+
         params = {
             "author": author,
             "name": name,
+            "version": version
         }
-
-        if version != 'latest':
-            params['version'] = version
-            cache_path = self._get_cache_path(author, name, version)
-            if cache_path.exists():
-                print(f"Using cached version of {author}/{name} (v{version})")
-                return author, name, version
-        else:
-            cached_versions = sorted(
-                self._get_cached_versions(author, name), reverse=True)
-            if cached_versions:
-                latest_cached = self._path_to_version(cached_versions[0])
-                print(
-                    f"Using latest cached version of {author}/{name} (v{latest_cached})")
-                return author, name, latest_cached
 
         response = requests.get(f"{self.base_url}/api/download", params=params)
         response.raise_for_status()
         agent_data = response.json()
 
-        actual_version = agent_data.get('version', 'unknown')
+        actual_version = agent_data.get('version', version)
         cache_path = self._get_cache_path(author, name, actual_version)
 
         self._save_agent_to_cache(agent_data, cache_path)
@@ -198,14 +193,16 @@ class AgentManager:
 
         temp_reqs_path.unlink()  # Remove temporary requirements file
 
-    def load_agent(self, author: str, name: str, version: str = "latest"):
-        if version == "latest":
-            cached_versions = sorted(self._get_cached_versions(author, name), reverse=True)
-            if not cached_versions:
-                raise ValueError(f"No cached versions found for {author}/{name}")
-            version = self._path_to_version(cached_versions[0])
+    def load_agent(self, author: str, name: str, version: str = None):
+        if version is None:
+            version = "0.0.1"
 
         agent_path = self._get_cache_path(author, name, version)
+        
+        if not agent_path.exists():
+            print(f"Agent {author}/{name} (v{version}) not found in cache. Downloading...")
+            self.download_agent(author, name, version)
+
         agent_package = AgentPackage(agent_path)
         agent_package.load()
 
