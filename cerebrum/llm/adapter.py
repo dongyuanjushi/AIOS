@@ -1,4 +1,5 @@
 
+from cerebrum.llm.base import BaseLLM
 from cerebrum.llm.registry import API_MODEL_REGISTRY
 # from .llm_classes.hf_native_llm import HfNativeLLM
 
@@ -27,6 +28,7 @@ class LLMAdapter:
                  use_backend: str = None
         ):
 
+        self.model: BaseLLM | None = None
 
         # For API-based LLM
         if llm_name in API_MODEL_REGISTRY.keys():
@@ -65,13 +67,19 @@ class LLMAdapter:
                 # )
                 pass
 
-    def address_request(self,
-                        agent_process,
-                        temperature=0.0) -> None:
-        """Address request sent from the agent
+    # def execute(self,
+    #                     agent_process,
+    #                     temperature=0.0) -> None:
+    #     """Address request sent from the agent
 
-        Args:
-            agent_process: AgentProcess object that contains request sent from the agent
-            temperature (float, optional): Parameter to control the randomness of LLM output. Defaults to 0.0.
-        """
-        self.model.address_request(agent_process,temperature)
+    #     Args:
+    #         agent_process: AgentProcess object that contains request sent from the agent
+    #         temperature (float, optional): Parameter to control the randomness of LLM output. Defaults to 0.0.
+    #     """
+    #     self.model.execute(agent_process,temperature)
+
+    def get_model(self) -> BaseLLM | None:
+        return self.model
+
+
+    
