@@ -24,7 +24,6 @@ class LLMAdapter:
                  max_gpu_memory: dict = None,
                  eval_device: str = None,
                  max_new_tokens: int = 256,
-                 log_mode: str = "console",
                  use_backend: str = None
         ):
 
@@ -34,7 +33,6 @@ class LLMAdapter:
         if llm_name in API_MODEL_REGISTRY.keys():
             self.model = API_MODEL_REGISTRY[llm_name](
                 llm_name = llm_name,
-                log_mode = log_mode
             )
         # For locally-deployed LLM
         else:

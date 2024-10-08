@@ -116,10 +116,10 @@ class ReactAgent(BaseAgent):
             {"role": "user", "content": "[Thinking]: Follow the workflow to solve the problem step by step. "}
         )
 
-        if workflow:
-            print(f"Generated workflow is: {workflow}\n", level="info")
-        else:
-            print("Fail to generate a valid workflow. Invalid JSON?\n", level="info")
+        # if workflow:
+            # print(f"Generated workflow is: {workflow}\n", level="info")
+        # else:
+            # print("Fail to generate a valid workflow. Invalid JSON?\n", level="info")
 
         try:
             if workflow:
@@ -139,6 +139,8 @@ class ReactAgent(BaseAgent):
 
                     else:
                         selected_tools = None
+
+                    print(Query(messages=self.messages, tools=None, message_return_type="json")) 
 
                     response = AgentProcessor.process_response(query=Query(messages=self.messages, tools=None, message_return_type="json"), llm=self.llm)
 
@@ -175,7 +177,7 @@ class ReactAgent(BaseAgent):
                         final_result = self.messages[-1]
 
                     step_result = self.messages[-1]["content"]
-                    print(f"At step {i + 1}, {step_result}\n", level="info")
+                    # print(f"At step {i + 1}, {step_result}\n", level="info")
 
                     self.rounds += 1
 
