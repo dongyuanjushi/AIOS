@@ -11,6 +11,7 @@ import platformdirs
 import importlib.util
 
 from cerebrum.manager.package import AgentPackage
+from cerebrum.utils.manager import get_newest_version
 
 class AgentManager:
     def __init__(self, base_url: str):
@@ -41,31 +42,40 @@ class AgentManager:
         }
 
     def upload_agent(self, payload: Dict):
-        response = requests.post(f"{self.base_url}/api/upload", json=payload)
+        response = requests.post(f"{self.base_url}/cerebrum/upload", json=payload)
         response.raise_for_status()
         print(f"Agent {payload.get('author')}/{payload.get('name')} (v{payload.get('version')}) uploaded successfully.")
 
-    def download_agent(self, author: str, name: str, version: str = None) -> tuple[str, str, str]:
+    def download_agent(self, author: str, name: str, version: str | None = None) -> tuple[str, str, str]:
         if version is None:
-            version = "0.0.1"
+            cached_versions = self._get_cached_versions(author, name)
+            version = get_newest_version(cached_versions)
 
         cache_path = self._get_cache_path(author, name, version)
+
         if cache_path.exists():
             print(f"Using cached version of {author}/{name} (v{version})")
             return author, name, version
 
-        params = {
-            "author": author,
-            "name": name,
-            "version": version
-        }
+        if version is None:
+            params = {
+                "author": author,
+                "name": name,
+            }
+        else: 
+            params = {
+                "author": author,
+                "name": name,
+                "version": version
+            }
 
-        response = requests.get(f"{self.base_url}/api/download", params=params)
+        response = requests.get(f"{self.base_url}/cerebrum/download", params=params)
         response.raise_for_status()
         agent_data = response.json()
 
         actual_version = agent_data.get('version', version)
         cache_path = self._get_cache_path(author, name, actual_version)
+        print(cache_path)
 
         self._save_agent_to_cache(agent_data, cache_path)
         print(
@@ -79,7 +89,7 @@ class AgentManager:
     def _get_cached_versions(self, author: str, name: str) -> List[str]:
         agent_dir = self.cache_dir / author / name
         if agent_dir.exists():
-            return [v.name for v in agent_dir.iterdir() if v.is_dir()]
+            return [self._path_to_version(v.stem) for v in agent_dir.glob("*.agent") if v.is_file()]
         return []
 
     def _get_cache_path(self, author: str, name: str, version: str) -> Path:
@@ -97,6 +107,11 @@ class AgentManager:
         }
         agent_package.files = {file["path"]: base64.b64decode(file["content"]) for file in agent_data["files"]}
         agent_package.save()
+
+        # Ensure the cache directory exists
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+
+        print(f"Saved agent to cache: {cache_path}")
 
     def _get_agent_files(self, folder_path: str) -> List[Dict[str, str]]:
         files = []
@@ -120,7 +135,7 @@ class AgentManager:
         return {}
 
     def list_available_agents(self) -> List[Dict[str, str]]:
-        response = requests.get(f"{self.base_url}/api/get_all_agents")
+        response = requests.get(f"{self.base_url}/cerebrum/get_all_agents")
         response.raise_for_status()
 
         response: dict = response.json()
@@ -135,7 +150,7 @@ class AgentManager:
         return agent_list
 
     def check_agent_updates(self, author: str, name: str, current_version: str) -> bool:
-        response = requests.get(f"{self.base_url}/api/check_updates", params={
+        response = requests.get(f"{self.base_url}/cerebrum/check_updates", params={
             "author": author,
             "name": name,
             "current_version": current_version
@@ -193,9 +208,10 @@ class AgentManager:
 
         temp_reqs_path.unlink()  # Remove temporary requirements file
 
-    def load_agent(self, author: str, name: str, version: str = None):
+    def load_agent(self, author: str, name: str, version: str | None = None):
         if version is None:
-            version = "0.0.1"
+            cached_versions = self._get_cached_versions(author, name)
+            version = get_newest_version(cached_versions)
 
         agent_path = self._get_cache_path(author, name, version)
         
