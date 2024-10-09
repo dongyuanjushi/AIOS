@@ -4,8 +4,10 @@ from cerebrum.manager.manager import AgentManager
 from example.academic_agent.agent import AcademicAgent
 from cerebrum.llm.adapter import LLMAdapter
 from cerebrum.runtime.process import AgentProcessor
+from cerebrum.interface import AutoAgentGenerator
 
-a = LLMAdapter('gpt-4o')
+
+# a = LLMAdapter('gpt-4o')
 # academic_agent = AcademicAgent(
 #     'agent1',
 #     'tell me about turtles',
@@ -35,11 +37,15 @@ a = LLMAdapter('gpt-4o')
 # res = academic_agent.run()
 # print(res)
 
-manager = AgentManager('https://my.aios.foundation/')
+# manager = AgentManager('https://my.aios.foundation/')
 # agent_data = manager.package_agent('/Users/rama2r/AIOS/example/academic_agent')
 
 # manager.upload_agent(agent_data)
-manager.download_agent('example', 'academic_agent', '0.0.3')
+# manager.download_agent('example', 'academic_agent', '0.0.3')
 # print(agent)
 # agent = manager.load_agent('example', 'academic_agent', '0.0.1')
 # print(agent)
+
+agent = AutoAgentGenerator.build_agent('example/academic_agent', 'gpt-4o')
+res = agent.run('tell me about fish')
+print(res)

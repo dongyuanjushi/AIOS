@@ -31,3 +31,6 @@ class AgentPackage:
 
     def get_module_name(self):
         return self.metadata.get('module', 'Agent')
+    
+    def get_config(self):
+        return self.metadata

@@ -249,7 +249,7 @@ class AgentManager:
         # Get the agent class
         agent_class = getattr(module, module_name)
 
-        return agent_class
+        return agent_class, agent_package.get_config()
 
 
 if __name__ == '__main__':

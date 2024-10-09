@@ -19,7 +19,7 @@ class BaseAgent:
         self.tools = []
         self.tool_info = ([])  # simplified information of the tool: {"name": "xxx", "description": "xxx"}
 
-        self.load_tools(self.config['tools'])
+        self.load_tools(self.config.get('tools'))
         self.rounds = 0
 
         self.task_input = task_input
@@ -101,6 +101,8 @@ class BaseAgent:
         return "".join(x.title() for x in components)
 
     def load_tools(self, tool_names):
+        if tool_names == None:
+            return
 
         for tool_name in tool_names:
             org, name = tool_name.split("/")

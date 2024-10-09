@@ -18,7 +18,7 @@ class ReactAgent(BaseAgent):
     def build_system_instruction(self):
         prefix = "".join(
             [
-                "".join(self.config["description"])
+                "".join(self.config.get('description', 'You are an AI agent.'))
             ]
         )
 
