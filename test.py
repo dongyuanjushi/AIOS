@@ -46,6 +46,20 @@ from cerebrum.interface import AutoAgentGenerator
 # agent = manager.load_agent('example', 'academic_agent', '0.0.1')
 # print(agent)
 
-agent = AutoAgentGenerator.build_agent('example/academic_agent', 'gpt-4o')
-res = agent.run('tell me about fish')
+# agent = AutoAgentGenerator.build_agent('example/academic_agent', 'gpt-4o')
+# res = agent.run('tell me about fish')
+# print(res)
+
+from cerebrum.interface import AutoAgent, AutoLLM
+from cerebrum.runtime import Pipeline
+
+academic_agent, academic_agent_config = AutoAgent.from_pretrained('example/academic_agent')
+gpt_llm = AutoLLM.from_foundational('gpt-4o')
+pipeline = Pipeline()
+
+pipeline \
+  .add_agent(academic_agent, academic_agent_config, 0) \
+  .add_llm(gpt_llm, 0)
+
+res = pipeline.run('tell me about fish')
 print(res)

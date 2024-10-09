@@ -3,32 +3,53 @@
 # from cerebrum.llm.base import BaseLLM
 
 
-# class Pipeline:
-#     def __init__(self):
-#         self.agents = dict()
-#         self.llms = dict()
+from cerebrum.runtime.process import RunnableAgent
 
 
-#     def add_agent(self, agent: BaseAgent, order: int):
-#         self.agents[order] = agent
-#         return self
+class Pipeline:
+    def __init__(self):
+        self.agent_classes = dict()
+        self.llms = dict()
+        self.running_processes = []
+        self.responses = []
 
-#     def add_llm(self, llm: BaseLLM, order: int):
-#         self.llms[order] = llm
-#         return self
+
+    def add_agent(self, agent_class, config, order: int):
+        self.agent_classes[order] = {
+            'agent_class': agent_class,
+            'config': config
+        }
+        
+        return self
+
+    def add_llm(self, llm, order: int):
+        self.llms[order] = llm
+        return self
 
     
-#     def run(self, query: str):
-#         agent_keys, llm_keys = list(self.agents.keys()), list(self.llms.keys())
+    def run(self, query: str):
+        agent_keys, llm_keys = list(self.agent_classes.keys()), list(self.llms.keys())
 
-#         if len(agent_keys) != len (llm_keys):
-#             return False
+        if len(agent_keys) != len (llm_keys):
+            return False
         
-#         agent_keys.sort()
+        agent_keys.sort()
 
-#         for k in agent_keys:
-#             # support single step pipelines for now
-#             if k != agent_keys[-1]:
-#                 return False
-#             else:
-#                 self.agents[k].llm = self.llms[k]
+        for k in agent_keys:
+            # support single step pipelines for now
+            if k != agent_keys[-1]:
+                return False
+            else:
+                _agent = RunnableAgent(
+                    self.agent_classes.get(k).get('agent_class'),
+                    self.agent_classes.get(k).get('config'), 
+                    self.llms.get(k)
+                )
+
+                self.running_processes.append(_agent)
+
+        for process in self.running_processes:
+            res = _agent.run(query)
+            self.responses.append(res)
+
+        return self.responses[0]
