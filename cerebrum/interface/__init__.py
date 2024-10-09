@@ -33,4 +33,10 @@ class AutoLLM:
 class AutoAgentGenerator:
     
     @classmethod
-    build_agent()
+    def build_agent(cls, agent_name: str, llm_name: str):
+        agent = AutoAgent.from_pretrained(agent_name)
+        llm = AutoLLM.from_foundational(llm_name)
+
+        agent.llm = llm
+
+        return agent
