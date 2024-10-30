@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 from typing import Optional, Any
-from datetime import UTC, datetime
+from datetime import datetime
 import json
 from uuid import uuid4
 
@@ -18,7 +18,7 @@ class MultimodalMessage:
     contents: list[Content]
     message_id: str = field(default_factory=lambda: str(uuid4()))
     parent_id: Optional[str] = None
-    created_at: datetime = field(default_factory=datetime.now(UTC))
+    created_at: datetime = field(default_factory=datetime.utcnow)
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def add_text(self, text: str, metadata: Optional[dict[str, Any]] = None) -> None:

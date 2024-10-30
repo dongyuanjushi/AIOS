@@ -1,12 +1,12 @@
 from dataclasses import dataclass, field
 from typing import Any
-from datetime import datetime, UTC
+from datetime import datetime
 
 @dataclass
 class ToolCall:
     tool_name: str
     arguments: dict[str, Any]
-    created_at: datetime = field(default_factory=datetime.now(UTC))
+    created_at: datetime = field(default_factory=datetime.utcnow)
     
     def to_dict(self) -> dict[str, Any]:
         return {
