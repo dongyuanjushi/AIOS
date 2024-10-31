@@ -16,3 +16,5 @@ python-dotenv
 litellm
 pyfzf
 platformdirs
+Cython
+numpy
