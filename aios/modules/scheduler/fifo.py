@@ -1,11 +1,11 @@
-# scheduler.py
+# fifo.py
 from dataclasses import dataclass
-import asyncio
-from typing import Optional, Any, Dict
+from typing import Dict, Optional, List, Any
 from enum import IntEnum
-from pyee import AsyncIOEventEmitter
+import asyncio
+from pyee.asyncio import AsyncIOEventEmitter
 import uuid
-from fifo_scheduler_core import QueueManager  # Cython-optimized part
+from aios.modules.scheduler.fifo_scheduler_core import QueueManager
 
 class Priority(IntEnum):
     LOW = 0
@@ -33,28 +33,21 @@ class AgentRequest:
             self.request_id = str(uuid.uuid4())
 
 class OptimizedBufferScheduler:
-    """
-    Pure scheduler that manages queuing and emitting of agent requests with batching support.
-    Uses Cython-optimized queue management for performance.
-    """
     def __init__(self, batch_config: Optional[BatchConfig] = None):
         self._event_loop = asyncio.get_event_loop()
         self.emitter = AsyncIOEventEmitter()
         self.batch_config = batch_config or BatchConfig()
-        
-        # Initialize Cython-optimized queue manager with batch settings
         self._queue_manager = QueueManager(
             self.batch_config.max_batch_size,
             self.batch_config.min_batch_size
         )
-        
-        # Track batch processors
         self._batch_tasks: Dict[str, asyncio.Task] = {}
+        self._running = True
 
     async def schedule(self, request: AgentRequest) -> None:
-        """Schedule a request with optional batching."""
+        """Schedule a request with batching."""
         # Add to Cython-managed queues
-        batch_ready = self._queue_manager.add_request(
+        self._queue_manager.add_request(
             request.agent_name,
             request.request_id,
             request.priority,
@@ -76,19 +69,24 @@ class OptimizedBufferScheduler:
 
     async def _process_agent_batches(self, agent_name: str) -> None:
         """Continuously process batches for an agent."""
-        while True:
-            # Get batch from Cython queue manager
-            batch = self._queue_manager.get_next_batch(agent_name)
-            
-            if batch:
-                # Emit batch for processing
-                await self.emitter.emit('execute_batch', {
-                    'agent_name': agent_name,
-                    'batch': batch
-                })
-            
-            # Wait before next check
-            await asyncio.sleep(self.batch_config.wait_time_seconds)
+        while self._running:
+            try:
+                # Get batch from Cython queue manager
+                batch = self._queue_manager.get_next_batch(agent_name)
+                
+                if batch:
+                    # Emit batch for processing - don't await the emit call
+                    self.emitter.emit('execute_batch', {
+                        'agent_name': agent_name,
+                        'batch': batch
+                    })
+                
+                # Wait before next check
+                await asyncio.sleep(self.batch_config.wait_time_seconds)
+            except Exception as e:
+                print(f"Error processing batch: {e}")
+                # Wait a bit before retrying
+                await asyncio.sleep(1)
 
     async def mark_batch_complete(self, agent_name: str, batch_ids: list) -> None:
         """Mark a batch as complete."""
@@ -97,3 +95,13 @@ class OptimizedBufferScheduler:
     def get_queue_stats(self, agent_name: str) -> dict:
         """Get queue statistics."""
         return self._queue_manager.get_stats(agent_name)
+
+    async def shutdown(self):
+        """Gracefully shutdown the scheduler."""
+        self._running = False
+        for task in self._batch_tasks.values():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
