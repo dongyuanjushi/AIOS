@@ -14,6 +14,10 @@ import threading
 import queue
 import time
 
+# Global instance storage
+cdef MessageQueue _INSTANCE = None
+cdef object _INSTANCE_LOCK = threading.Lock()
+
 cdef class Message:
     cdef:
         public str msg_type
@@ -27,11 +31,11 @@ cdef class Message:
 
 cdef class MessageQueue:
     cdef:
-        object _subscribers  # dict
-        object _queue       # queue.Queue
+        object _subscribers
+        object _queue
         bint _running
-        object _processor_thread  # threading.Thread
-        object _lock       # threading.Lock
+        object _processor_thread
+        object _lock
         bint _initialized
     
     def __cinit__(self):
@@ -47,16 +51,15 @@ cdef class MessageQueue:
 
     @staticmethod
     def get_instance():
-        # Static instance storage
-        cdef MessageQueue instance
-        if not hasattr(MessageQueue, '_instance'):
-            with threading.Lock():
-                if not hasattr(MessageQueue, '_instance'):
-                    instance = MessageQueue()
-                    instance._initialized = True
-                    instance._start_processor()
-                    setattr(MessageQueue, '_instance', instance)
-        return getattr(MessageQueue, '_instance')
+        global _INSTANCE
+        global _INSTANCE_LOCK
+        
+        with _INSTANCE_LOCK:
+            if _INSTANCE is None:
+                _INSTANCE = MessageQueue()
+                _INSTANCE._initialized = True
+                _INSTANCE._start_processor()
+        return _INSTANCE
 
     cdef inline void _start_processor(self):
         self._processor_thread = threading.Thread(target=self._process_messages, daemon=True)

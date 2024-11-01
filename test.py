@@ -6,6 +6,9 @@ from cerebrum.llm.adapter import LLMAdapter
 from cerebrum.runtime.process import AgentProcessor
 from cerebrum.interface import AutoAgentGenerator
 
+from dotenv import load_dotenv
+load_dotenv()
+
 
 # a = LLMAdapter('gpt-4o')
 # academic_agent = AcademicAgent(

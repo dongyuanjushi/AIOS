@@ -9,9 +9,6 @@ from aios.modules.access.content import Content
 from aios.modules.access.tool_call import ToolCall
 from aios.modules.access.types.message import ContentType, MessageRole
 
-
-
-
 @dataclass
 class MultimodalMessage:
     role: MessageRole

@@ -42,6 +42,6 @@ setup(
             'cdivision': True,
             'infer_types': True,
         },
-        annotate=True  # Generate HTML annotation file
+        annotate=False  # Generate HTML annotation file if set to True
     ),
 )
