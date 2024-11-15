@@ -2,7 +2,7 @@ logs
 .idea/
 .DS_Store
 .ipynb_checkpoints
-__pycache__
+**/__pycache__
 .idea
 context_restoration
 .pytest_cache
