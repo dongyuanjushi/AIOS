@@ -7,6 +7,8 @@ from aios.utils.logger import SchedulerLogger
 
 from abc import ABC, abstractmethod
 
+from typing import List
+
 from threading import Thread
 
 from aios.memory.manager import MemoryManager
@@ -17,7 +19,7 @@ from aios.tool.manager import ToolManager
 class Scheduler:
     def __init__(
         self,
-        llm: LLMAdapter,
+        llms: List[LLMAdapter],
         memory_manager: MemoryManager,
         storage_manager: StorageManager,
         tool_manager: ToolManager,
@@ -41,7 +43,7 @@ class Scheduler:
             "sto_syscall_processor": Thread(target=self.run_storage_syscall),
             "tool_syscall_processor": Thread(target=self.run_tool_syscall),
         }
-        self.llm = llm
+        self.llms = llms
         self.memory_manager = memory_manager
         self.storage_manager = storage_manager
         self.tool_manager = tool_manager

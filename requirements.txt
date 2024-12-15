@@ -14,4 +14,5 @@ llama_index==0.10.19
 llama_index_core==0.10.19
 numpy==1.24.3
 soundfile
+python-multipart
 git+https://github.com/agiresearch/Cerebrum.git

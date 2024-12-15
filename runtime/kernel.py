@@ -1,7 +1,7 @@
 from typing_extensions import Literal
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from dotenv import load_dotenv
 import traceback
 import json
@@ -47,7 +47,7 @@ active_components = {
 send_request, SysCallWrapper = useSysCall()
 
 
-class LLMConfig(BaseModel):
+class LLMItemConfig(BaseModel):
     llm_name: str
     max_gpu_memory: dict | None = None
     eval_device: str = "cuda:0"
@@ -55,6 +55,9 @@ class LLMConfig(BaseModel):
     log_mode: str = "INFO"
     llm_backend: str = "default"
 
+
+class LLMConfig(BaseModel):
+    llms: List[LLMItemConfig]
 
 class StorageConfig(BaseModel):
     root_dir: str = "root"
@@ -100,16 +103,19 @@ class QueryRequest(BaseModel):
 async def setup_llm(config: LLMConfig):
     """Set up the LLM core component."""
     try:
-        llm = useCore(
-            llm_name=config.llm_name,
-            llm_backend=config.llm_backend,
-            max_gpu_memory=config.max_gpu_memory,
-            eval_device=config.eval_device,
-            max_new_tokens=config.max_new_tokens,
-            log_mode=config.log_mode,
-        )
+        llms = []
+        for llm_config in config.llms:
+            llm = useCore(
+                llm_name=llm_config.llm_name,
+                llm_backend=llm_config.llm_backend,
+                max_gpu_memory=llm_config.max_gpu_memory,
+                eval_device=llm_config.eval_device,
+                max_new_tokens=llm_config.max_new_tokens,
+                log_mode=llm_config.log_mode,
+            )
+            llms.append(llm)
         # print(config.llm_name)
-        active_components["llm"] = llm
+        active_components["llms"] = llms
         return {"status": "success", "message": "LLM core initialized"}
     except Exception as e:
         print(
@@ -179,15 +185,15 @@ async def setup_tool_manager(config: ToolManagerConfig):
             detail={
                 "error": "Failed to initialize tool manager",
                 "message": error_msg,
-                "traceback": stack_trace
-            }
+                "traceback": stack_trace,
+            },
         )
 
 
 @app.post("/core/factory/setup")
 async def setup_agent_factory(config: SchedulerConfig):
     """Set up the agent factory for managing agent execution."""
-    required_components = ["llm", "memory", "storage", "tool"]
+    required_components = ["llms", "memory", "storage", "tool"]
     missing_components = [
         comp for comp in required_components if not active_components[comp]
     ]
@@ -208,7 +214,7 @@ async def setup_agent_factory(config: SchedulerConfig):
             "await": await_agent_execution,
         }
 
-        print(active_components["llm"].model)
+        print([m.model for m in active_components["llms"]])
 
         return {"status": "success", "message": "Agent factory initialized"}
     except Exception as e:
@@ -221,7 +227,7 @@ async def setup_agent_factory(config: SchedulerConfig):
 @app.post("/core/scheduler/setup")
 async def setup_scheduler(config: SchedulerConfig):
     """Set up the FIFO scheduler with all components."""
-    required_components = ["llm", "memory", "storage", "tool"]
+    required_components = ["llms", "memory", "storage", "tool"]
     missing_components = [
         comp for comp in required_components if not active_components[comp]
     ]
@@ -235,7 +241,7 @@ async def setup_scheduler(config: SchedulerConfig):
     try:
         # Set up the scheduler with all components
         scheduler = fifo_scheduler(
-            llm=active_components["llm"],
+            llms=active_components["llms"],
             memory_manager=active_components["memory"],
             storage_manager=active_components["storage"],
             tool_manager=active_components["tool"],
@@ -277,16 +283,16 @@ async def submit_agent(config: AgentSubmit):
         print(f"\n[DEBUG] ===== Agent Submission =====")
         print(f"[DEBUG] Agent ID: {config.agent_id}")
         print(f"[DEBUG] Task: {config.agent_config.get('task', 'No task specified')}")
-        
+
         _submit_agent = active_components["factory"]["submit"]
         execution_id = _submit_agent(
             agent_name=config.agent_id, task_input=config.agent_config["task"]
         )
-        
+
         return {
             "status": "success",
             "execution_id": execution_id,
-            "message": f"Agent {config.agent_id} submitted for execution"
+            "message": f"Agent {config.agent_id} submitted for execution",
         }
     except Exception as e:
         error_msg = str(e)
@@ -298,8 +304,8 @@ async def submit_agent(config: AgentSubmit):
             detail={
                 "error": "Failed to submit agent",
                 "message": error_msg,
-                "traceback": stack_trace
-            }
+                "traceback": stack_trace,
+            },
         )
 
 
@@ -312,37 +318,33 @@ async def get_agent_status(execution_id: int):
     try:
         print(f"\n[DEBUG] ===== Checking Agent Status =====")
         print(f"[DEBUG] Execution ID: {execution_id}")
-        
+
         await_execution = active_components["factory"]["await"]
         result = await_execution(int(execution_id))
-        
+
         if result is None:
             return {
                 "status": "running",
                 "message": "Execution in progress",
-                "execution_id": execution_id
+                "execution_id": execution_id,
             }
 
-        return {
-            "status": "completed",
-            "result": result,
-            "execution_id": execution_id
-        }
+        return {"status": "completed", "result": result, "execution_id": execution_id}
     except Exception as e:
         error_msg = str(e)
         stack_trace = traceback.format_exc()
         print(f"[ERROR] Failed to get agent status: {error_msg}")
         print(f"[ERROR] Stack Trace:\n{stack_trace}")
-        
+
         return {
             "status": "error",
             "message": error_msg,
             "error": {
                 "type": type(e).__name__,
                 "message": error_msg,
-                "traceback": stack_trace
+                "traceback": stack_trace,
             },
-            "execution_id": execution_id
+            "execution_id": execution_id,
         }
 
 

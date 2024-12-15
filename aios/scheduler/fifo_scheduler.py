@@ -14,6 +14,8 @@ from aios.tool.manager import ToolManager
 
 from .base import Scheduler
 
+from typing import List
+
 from queue import Empty
 
 import traceback
@@ -22,7 +24,7 @@ import time
 class FIFOScheduler(Scheduler):
     def __init__(
         self,
-        llm: LLMAdapter,
+        llms: List[LLMAdapter],
         memory_manager: MemoryManager,
         storage_manager: StorageManager,
         tool_manager: ToolManager,
@@ -33,7 +35,7 @@ class FIFOScheduler(Scheduler):
         get_tool_syscall: ToolRequestQueueGetMessage,
     ):
         super().__init__(
-            llm,
+            llms,
             memory_manager,
             storage_manager,
             tool_manager,
@@ -55,8 +57,8 @@ class FIFOScheduler(Scheduler):
                     f"{llm_syscall.agent_name} is executing. \n", "execute"
                 )
                 llm_syscall.set_start_time(time.time())
-
-                response = self.llm.address_syscall(llm_syscall)
+                print(self.llms)
+                response = self.llms[0].address_syscall(llm_syscall)
                 llm_syscall.set_response(response)
 
                 llm_syscall.event.set()

@@ -7,7 +7,7 @@ from .storage import StorageRequestQueueGetMessage
 from .tool import ToolRequestQueueGetMessage
 
 class SchedulerParams(BaseModel):
-    llm: Any
+    llms: Any
     memory_manager: Any
     storage_manager: Any
     tool_manager: Any
