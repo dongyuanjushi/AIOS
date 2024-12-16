@@ -30,8 +30,11 @@ class SignalList:
     
     def pop(self, index: int = -1):
         with self._lock:
-            while not self._list:
-                self._condition.wait()
+            if not self._list:
+                return None
+            # print(f"pop: {index}")
+            # if not self._list:
+            #     self._condition.wait()
             return self._list.pop(index)
     
     def sort(self, key: Callable = None, reverse: bool = False):

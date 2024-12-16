@@ -360,7 +360,7 @@ async def cleanup_components():
         active_components["scheduler"].stop()
         active_components["scheduler"] = None
 
-        for component in ["tool", "memory", "storage", "llm"]:
+        for component in ["tool", "memory", "storage", "llms"]:
             if active_components[component]:
                 if hasattr(active_components[component], "cleanup"):
                     active_components[component].cleanup()

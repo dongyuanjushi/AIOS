@@ -61,10 +61,12 @@ class FIFOScheduler(Scheduler):
                 # llm_syscall = self.get_llm_syscall()
                 llm_syscall = self.llm_request_queue.pop(0)
                 
-                # if llm_syscall is None:
-                #     time.sleep(0.1)
-                #     continue
-
+                if llm_syscall is None:
+                    time.sleep(0.1)
+                    continue
+                
+                print(llm_syscall)
+                
                 llm_syscall.set_status("executing")
                 self.logger.log(
                     f"{llm_syscall.agent_name} is executing. \n", "execute"
@@ -89,9 +91,11 @@ class FIFOScheduler(Scheduler):
                 # wait at a fixed time interval, if there is nothing received in the time interval, it will raise Empty
                 memory_syscall = self.memory_request_queue.pop(0)
 
-                # if llm_syscall is None:
-                #     time.sleep(0.1)
-                #     continue
+                if memory_syscall is None:
+                    time.sleep(0.1)
+                    continue
+                
+                print(memory_syscall)
                 
                 memory_syscall.set_status("executing")
                 self.logger.log(
@@ -117,6 +121,12 @@ class FIFOScheduler(Scheduler):
             try:
                 storage_syscall = self.storage_request_queue.pop(0)
 
+                if storage_syscall is None:
+                    time.sleep(0.1)
+                    continue
+                
+                print(storage_syscall)
+                
                 storage_syscall.set_status("executing")
                 self.logger.log(
                     f"{storage_syscall.agent_name} is executing. \n", "execute"
@@ -146,6 +156,12 @@ class FIFOScheduler(Scheduler):
             try:
                 tool_syscall = self.tool_request_queue.pop(0)
 
+                if tool_syscall is None:
+                    time.sleep(0.1)
+                    continue
+                
+                print(tool_syscall)
+                
                 tool_syscall.set_status("executing")
 
                 tool_syscall.set_start_time(time.time())
