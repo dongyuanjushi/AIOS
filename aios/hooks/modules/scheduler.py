@@ -100,21 +100,21 @@ def fifo_scheduler_nonblock(params: SchedulerParams):
     Args:
         params (SchedulerParams): The parameters for the scheduler.
     """
-    if params.get_llm_syscall is None:
-        from aios.hooks.stores._global import global_llm_req_queue_get_message
-        params.get_llm_syscall = global_llm_req_queue_get_message
+    if params.llm_request_queue is None:
+        from aios.hooks.stores._global import global_llm_req_queue
+        params.llm_request_queue = global_llm_req_queue
 
-    if params.get_memory_syscall is None:
-        from aios.hooks.stores._global import global_memory_req_queue_get_message
-        params.get_memory_syscall = global_memory_req_queue_get_message
+    if params.memory_request_queue is None:
+        from aios.hooks.stores._global import global_memory_req_queue
+        params.memory_request_queue = global_memory_req_queue
     
-    if params.get_storage_syscall is None:
-        from aios.hooks.stores._global import global_storage_req_queue_get_message
-        params.get_storage_syscall = global_storage_req_queue_get_message
+    if params.storage_request_queue is None:
+        from aios.hooks.stores._global import global_storage_req_queue
+        params.storage_request_queue = global_storage_req_queue
         
-    if params.get_tool_syscall is None:
-        from aios.hooks.stores._global import global_tool_req_queue_get_message
-        params.get_tool_syscall = global_tool_req_queue_get_message
+    if params.tool_request_queue is None:
+        from aios.hooks.stores._global import global_tool_req_queue
+        params.tool_request_queue = global_tool_req_queue
     
     scheduler = FIFOScheduler(**params.model_dump())
 

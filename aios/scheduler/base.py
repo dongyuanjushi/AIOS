@@ -1,7 +1,12 @@
-from aios.hooks.types.llm import LLMRequestQueueGetMessage
-from aios.hooks.types.memory import MemoryRequestQueueGetMessage
-from aios.hooks.types.tool import ToolRequestQueueGetMessage
-from aios.hooks.types.storage import StorageRequestQueueGetMessage
+# from aios.hooks.types.llm import LLMRequestQueueGetMessage
+# from aios.hooks.types.memory import MemoryRequestQueueGetMessage
+# from aios.hooks.types.tool import ToolRequestQueueGetMessage
+# from aios.hooks.types.storage import StorageRequestQueueGetMessage
+
+from aios.hooks.types.llm import LLMRequestQueue
+from aios.hooks.types.memory import MemoryRequestQueue
+from aios.hooks.types.storage import StorageRequestQueue
+from aios.hooks.types.tool import ToolRequestQueue
 
 from aios.utils.logger import SchedulerLogger
 
@@ -24,16 +29,25 @@ class Scheduler:
         storage_manager: StorageManager,
         tool_manager: ToolManager,
         log_mode,
-        get_llm_syscall: LLMRequestQueueGetMessage,
-        get_memory_syscall: MemoryRequestQueueGetMessage,
-        get_storage_syscall: StorageRequestQueueGetMessage,
-        get_tool_syscall: ToolRequestQueueGetMessage,
+        # get_llm_syscall: LLMRequestQueueGetMessage,
+        # get_memory_syscall: MemoryRequestQueueGetMessage,
+        # get_storage_syscall: StorageRequestQueueGetMessage,
+        # get_tool_syscall: ToolRequestQueueGetMessage,
+        llm_request_queue: LLMRequestQueue,
+        memory_request_queue: MemoryRequestQueue,
+        storage_request_queue: StorageRequestQueue,
+        tool_request_queue: ToolRequestQueue
     ):
         # self.agent_process_queue = Queue()
-        self.get_llm_syscall = get_llm_syscall
-        self.get_memory_syscall = get_memory_syscall
-        self.get_storage_syscall = get_storage_syscall
-        self.get_tool_syscall = get_tool_syscall
+        # self.get_llm_syscall = get_llm_syscall
+        # self.get_memory_syscall = get_memory_syscall
+        # self.get_storage_syscall = get_storage_syscall
+        # self.get_tool_syscall = get_tool_syscall
+        self.llm_request_queue = llm_request_queue
+        self.memory_request_queue = memory_request_queue
+        self.storage_request_queue = storage_request_queue
+        self.tool_request_queue = tool_request_queue
+        
         self.active = False  # start/stop the scheduler
         self.log_mode = log_mode
         self.logger = self.setup_logger()

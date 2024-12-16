@@ -1,11 +1,13 @@
 from pydantic import BaseModel
-from typing import Any, TypeAlias, Callable
+from typing import Any, TypeAlias, Callable, List
 from queue import Queue
 
-MemoryRequestQueue: TypeAlias = Queue
+from ..stores.queue import SignalList
 
-MemoryRequestQueueGetMessage: TypeAlias = Callable[[], None]
-MemoryRequestQueueAddMessage: TypeAlias = Callable[[str], None]
+MemoryRequestQueue: TypeAlias = SignalList
+
+MemoryRequestQueuePopItem: TypeAlias = Callable[[], None]
+MemoryRequestQueueAppendItem: TypeAlias = Callable[[str], None]
 MemoryRequestQueueCheckEmpty: TypeAlias = Callable[[], bool]
 
 class MemoryManagerParams(BaseModel):

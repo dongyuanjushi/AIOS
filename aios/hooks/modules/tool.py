@@ -5,9 +5,9 @@ from typing import Tuple
 from aios.tool.manager import ToolManager
 from aios.hooks.types.tool import (
     ToolRequestQueue,
-    ToolRequestQueueAddMessage,
+    ToolRequestQueueAppendItem,
     ToolRequestQueueCheckEmpty,
-    ToolRequestQueueGetMessage
+    ToolRequestQueuePopItem
 )
 from aios.hooks.utils.validate import validate
 from aios.hooks.stores import queue as QueueStore, processes as ProcessStore
@@ -26,7 +26,7 @@ def useToolManager() -> ToolManager:
     return ToolManager()
 
 def useToolRequestQueue() -> (
-    Tuple[ToolRequestQueue, ToolRequestQueueGetMessage, ToolRequestQueueAddMessage, ToolRequestQueueCheckEmpty]
+    Tuple[ToolRequestQueue, ToolRequestQueuePopItem, ToolRequestQueueAppendItem, ToolRequestQueueCheckEmpty]
 ):
     """
     Creates and returns a queue for Storage-related requests along with helper methods to manage the queue.
@@ -44,15 +44,15 @@ def useToolRequestQueue() -> (
     QueueStore.REQUEST_QUEUE[r_str] = _
 
     # Function to get messages from the queue
-    def getMessage():
-        return QueueStore.getMessage(_)
+    def popItem():
+        return QueueStore.popItem(_)
 
     # Function to add messages to the queue
-    def addMessage(message: str):
-        return QueueStore.addMessage(_, message)
+    def appendItem(item):
+        return QueueStore.appendItem(_, item)
 
     # Function to check if the queue is empty
     def isEmpty():
         return QueueStore.isEmpty(_)
 
-    return _, getMessage, addMessage, isEmpty
+    return _, popItem, appendItem, isEmpty

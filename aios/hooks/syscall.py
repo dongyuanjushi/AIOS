@@ -5,10 +5,10 @@ from aios.core.syscall.llm import LLMSyscall
 from aios.core.syscall.storage import StorageSyscall
 from aios.core.syscall.tool import ToolSyscall
 from aios.hooks.stores._global import (
-    global_llm_req_queue_add_message,
-    global_memory_req_queue_add_message,
-    global_storage_req_queue_add_message,
-    global_tool_req_queue_add_message,
+    global_llm_req_queue_append_item,
+    global_memory_req_queue_append_item,
+    global_storage_req_queue_append_item,
+    global_tool_req_queue_append_item
 )
 
 from cerebrum.llm.communication import LLMQuery
@@ -33,7 +33,7 @@ def useSysCall():
             syscall.set_created_time(current_time)
             syscall.set_response(None)
 
-            global_storage_req_queue_add_message(syscall)
+            global_storage_req_queue_append_item(syscall)
 
             syscall.start()
             syscall.join()
@@ -77,7 +77,7 @@ def useSysCall():
             syscall.set_created_time(current_time)
             syscall.set_response(None)
 
-            global_memory_req_queue_add_message(syscall)
+            global_memory_req_queue_append_item(syscall)
 
             syscall.start()
             syscall.join()
@@ -121,7 +121,7 @@ def useSysCall():
             syscall.set_created_time(current_time)
             syscall.set_response(None)
 
-            global_tool_req_queue_add_message(syscall)
+            global_tool_req_queue_append_item(syscall)
 
             syscall.start()
             syscall.join()
@@ -167,7 +167,7 @@ def useSysCall():
             syscall.set_created_time(current_time)
             syscall.set_response(None)
 
-            global_llm_req_queue_add_message(syscall)
+            global_llm_req_queue_append_item(syscall)
 
             syscall.start()
             syscall.join()

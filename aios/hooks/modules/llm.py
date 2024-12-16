@@ -8,8 +8,8 @@ from aios.llm_core.adapter import LLMAdapter as LLM
 from aios.hooks.types.llm import (
     LLMParams,
     LLMRequestQueue,
-    LLMRequestQueueAddMessage,
-    LLMRequestQueueGetMessage,
+    LLMRequestQueueAppendItem,
+    LLMRequestQueuePopItem,
     LLMRequestQueueCheckEmpty
 )
 from aios.hooks.utils.validate import validate
@@ -32,7 +32,7 @@ def useCore(params: LLMParams) -> LLM:
 
 
 def useLLMRequestQueue() -> (
-    Tuple[LLMRequestQueue, LLMRequestQueueGetMessage, LLMRequestQueueAddMessage, LLMRequestQueueCheckEmpty]
+    Tuple[LLMRequestQueue, LLMRequestQueuePopItem, LLMRequestQueueAppendItem, LLMRequestQueueCheckEmpty]
 ):
     """
     Creates and returns a queue for LLM requests along with helper methods to manage the queue.
@@ -50,15 +50,15 @@ def useLLMRequestQueue() -> (
     QueueStore.REQUEST_QUEUE[r_str] = _
 
     # Function to get messages from the queue
-    def getMessage():
-        return QueueStore.getMessage(_)
+    def popItem():
+        return QueueStore.popItem(_)
 
     # Function to add messages to the queue
-    def addMessage(message: str):
-        return QueueStore.addMessage(_, message)
+    def appendItem(item):
+        return QueueStore.appendItem(_, item)
 
     # Function to check if the queue is empty
     def isEmpty():
         return QueueStore.isEmpty(_)
 
-    return _, getMessage, addMessage, isEmpty
+    return _, popItem, appendItem, isEmpty

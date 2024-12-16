@@ -2,10 +2,12 @@ from pydantic import BaseModel
 from typing import Any, TypeAlias, Callable
 from queue import Queue
 
-LLMRequestQueue: TypeAlias = Queue
+from ..stores.queue import SignalList
 
-LLMRequestQueueGetMessage: TypeAlias = Callable[[], None]
-LLMRequestQueueAddMessage: TypeAlias = Callable[[str], None]
+LLMRequestQueue: TypeAlias = SignalList
+
+LLMRequestQueuePopItem: TypeAlias = Callable[[], None]
+LLMRequestQueueAppendItem: TypeAlias = Callable[[str], None]
 LLMRequestQueueCheckEmpty: TypeAlias = Callable[[], bool]
 
 

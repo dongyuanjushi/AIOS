@@ -2,8 +2,8 @@ from typing import Tuple
 
 from aios.hooks.types.memory import (
     MemoryRequestQueue,
-    MemoryRequestQueueGetMessage,
-    MemoryRequestQueueAddMessage,
+    MemoryRequestQueuePopItem,
+    MemoryRequestQueueAppendItem,
     MemoryRequestQueueCheckEmpty
 )
 from aios.hooks.utils.validate import validate
@@ -14,7 +14,7 @@ from aios.hooks.types.memory import MemoryManagerParams
 from aios.memory.manager import MemoryManager
 
 def useMemoryRequestQueue() -> (
-    Tuple[MemoryRequestQueue, MemoryRequestQueueGetMessage, MemoryRequestQueueAddMessage, MemoryRequestQueueCheckEmpty]
+    Tuple[MemoryRequestQueue, MemoryRequestQueuePopItem, MemoryRequestQueueAppendItem, MemoryRequestQueueCheckEmpty]
 ):
     """
     Creates and returns a queue for Memory-related requests along with helper methods to manage the queue.
@@ -32,18 +32,18 @@ def useMemoryRequestQueue() -> (
     QueueStore.REQUEST_QUEUE[r_str] = _
 
     # Function to get messages from the queue
-    def getMessage():
-        return QueueStore.getMessage(_)
+    def popItem():
+        return QueueStore.popItem(_)
 
     # Function to add messages to the queue
-    def addMessage(message: str):
-        return QueueStore.addMessage(_, message)
+    def appendItem(message: str):
+        return QueueStore.appendItem(_, message)
 
     # Function to check if the queue is empty
     def isEmpty():
         return QueueStore.isEmpty(_)
 
-    return _, getMessage, addMessage, isEmpty
+    return _, popItem, appendItem, isEmpty
 
 @validate(MemoryManagerParams)
 def useMemoryManager(params):

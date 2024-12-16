@@ -37,7 +37,7 @@ app.add_middleware(
 
 # Store component configurations and instances
 active_components = {
-    "llm": None,
+    "llms": None,
     "storage": None,
     "memory": None,
     "tool": None,
@@ -246,10 +246,14 @@ async def setup_scheduler(config: SchedulerConfig):
             storage_manager=active_components["storage"],
             tool_manager=active_components["tool"],
             log_mode=config.log_mode,
-            get_llm_syscall=None,
-            get_memory_syscall=None,
-            get_storage_syscall=None,
-            get_tool_syscall=None,
+            llm_request_queue=None,
+            memory_request_queue=None,
+            storage_request_queue=None,
+            tool_request_queue=None
+            # get_llm_syscall=None,
+            # get_memory_syscall=None,
+            # get_storage_syscall=None,
+            # get_tool_syscall=None,
         )
 
         active_components["scheduler"] = scheduler

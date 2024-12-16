@@ -2,10 +2,10 @@
 # similar fashion to the round robin scheduler. However, the timeout is 1 second
 # instead of 0.05 seconds.
 
-from aios.hooks.types.llm import LLMRequestQueueGetMessage
-from aios.hooks.types.memory import MemoryRequestQueueGetMessage
-from aios.hooks.types.tool import ToolRequestQueueGetMessage
-from aios.hooks.types.storage import StorageRequestQueueGetMessage
+from aios.hooks.types.llm import LLMRequestQueue
+from aios.hooks.types.memory import MemoryRequestQueue
+from aios.hooks.types.tool import ToolRequestQueue
+from aios.hooks.types.storage import StorageRequestQueue
 
 from aios.memory.manager import MemoryManager
 from aios.storage.storage import StorageManager
@@ -29,10 +29,14 @@ class FIFOScheduler(Scheduler):
         storage_manager: StorageManager,
         tool_manager: ToolManager,
         log_mode,
-        get_llm_syscall: LLMRequestQueueGetMessage,
-        get_memory_syscall: MemoryRequestQueueGetMessage,
-        get_storage_syscall: StorageRequestQueueGetMessage,
-        get_tool_syscall: ToolRequestQueueGetMessage,
+        # get_llm_syscall: LLMRequestQueueGetMessage,
+        # get_memory_syscall: MemoryRequestQueueGetMessage,
+        # get_storage_syscall: StorageRequestQueueGetMessage,
+        # get_tool_syscall: ToolRequestQueueGetMessage,
+        llm_request_queue: LLMRequestQueue,
+        memory_request_queue: MemoryRequestQueue,
+        storage_request_queue: StorageRequestQueue,
+        tool_request_queue: ToolRequestQueue
     ):
         super().__init__(
             llms,
@@ -40,17 +44,26 @@ class FIFOScheduler(Scheduler):
             storage_manager,
             tool_manager,
             log_mode,
-            get_llm_syscall,
-            get_memory_syscall,
-            get_storage_syscall,
-            get_tool_syscall,
+            # get_llm_syscall,
+            # get_memory_syscall,
+            # get_storage_syscall,
+            # get_tool_syscall,
+            llm_request_queue,
+            memory_request_queue,
+            storage_request_queue,
+            tool_request_queue
         )
 
     def run_llm_syscall(self):
         while self.active:
             try:
                 # wait at a fixed time interval, if there is nothing received in the time interval, it will raise Empty
-                llm_syscall = self.get_llm_syscall()
+                # llm_syscall = self.get_llm_syscall()
+                llm_syscall = self.llm_request_queue.pop(0)
+                
+                # if llm_syscall is None:
+                #     time.sleep(0.1)
+                #     continue
 
                 llm_syscall.set_status("executing")
                 self.logger.log(
@@ -65,9 +78,8 @@ class FIFOScheduler(Scheduler):
                 llm_syscall.set_status("done")
                 llm_syscall.set_end_time(time.time())
 
-            except Empty:
-                pass
-
+            # except Empty:
+            #     pass
             except Exception:
                 traceback.print_exc()
 
@@ -75,8 +87,12 @@ class FIFOScheduler(Scheduler):
         while self.active:
             try:
                 # wait at a fixed time interval, if there is nothing received in the time interval, it will raise Empty
-                memory_syscall = self.get_memory_syscall()
+                memory_syscall = self.memory_request_queue.pop(0)
 
+                # if llm_syscall is None:
+                #     time.sleep(0.1)
+                #     continue
+                
                 memory_syscall.set_status("executing")
                 self.logger.log(
                     f"{memory_syscall.agent_name} is executing. \n", "execute"
@@ -99,7 +115,7 @@ class FIFOScheduler(Scheduler):
     def run_storage_syscall(self):
         while self.active:
             try:
-                storage_syscall = self.get_storage_syscall()
+                storage_syscall = self.storage_request_queue.pop(0)
 
                 storage_syscall.set_status("executing")
                 self.logger.log(
@@ -128,7 +144,7 @@ class FIFOScheduler(Scheduler):
     def run_tool_syscall(self):
         while self.active:
             try:
-                tool_syscall = self.get_tool_syscall()
+                tool_syscall = self.tool_request_queue.pop(0)
 
                 tool_syscall.set_status("executing")
 

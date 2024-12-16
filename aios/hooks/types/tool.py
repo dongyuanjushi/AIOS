@@ -2,10 +2,12 @@ from pydantic import BaseModel
 from typing import Any, TypeAlias, Callable
 from queue import Queue
 
-ToolRequestQueue: TypeAlias = Queue
+from ..stores.queue import SignalList
 
-ToolRequestQueueGetMessage: TypeAlias = Callable[[], None]
-ToolRequestQueueAddMessage: TypeAlias = Callable[[str], None]
+ToolRequestQueue: TypeAlias = SignalList
+
+ToolRequestQueuePopItem: TypeAlias = Callable[[], None]
+ToolRequestQueueAppendItem: TypeAlias = Callable[[str], None]
 ToolRequestQueueCheckEmpty: TypeAlias = Callable[[], bool]
 
 class ToolManagerParams(BaseModel):
