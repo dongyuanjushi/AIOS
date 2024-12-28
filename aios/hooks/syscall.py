@@ -203,8 +203,9 @@ def useSysCall():
                 return llm_syscall_exec(agent_name, query)
 
             elif action_type == "tool_use":
+                print(agent_name, query)
                 response = llm_syscall_exec(agent_name, query)["response"]
-                # print(response)
+                print(response)
                 tool_calls = response.tool_calls
                 # print(tool_calls)
                 return tool_syscall_exec(agent_name, tool_calls)

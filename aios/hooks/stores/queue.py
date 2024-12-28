@@ -3,7 +3,6 @@
 from typing import List, Callable, Optional
 
 import threading
-
 class SignalList:
     def __init__(self):
         self._list: List = []
@@ -30,12 +29,16 @@ class SignalList:
     
     def pop(self, index: int = -1):
         with self._lock:
-            if not self._list:
-                return None
-            # print(f"pop: {index}")
             # if not self._list:
+            #     # return None
+            # # print(f"pop: {index}")
+            # # if not self._list:
             #     self._condition.wait()
-            return self._list.pop(index)
+            if len(self._list) == 0:
+                # if llm_syscall is None:
+                return None
+            else:
+                return self._list.pop(index)
     
     def sort(self, key: Callable = None, reverse: bool = False):
         with self._lock:
@@ -72,11 +75,11 @@ class SignalList:
         
 REQUEST_QUEUE: dict[str, SignalList] = {}
 
-def getItem(q: SignalList):
+def popItem(q: SignalList):
     # return q.get(block=True, timeout=0.1)
     return q.pop(0)
 
-def addItem(q: SignalList, item):
+def appendItem(q: SignalList, item):
     # q.put(message)
     q.append(item)
 

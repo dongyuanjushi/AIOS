@@ -53,6 +53,13 @@ class FIFOScheduler(Scheduler):
             storage_request_queue,
             tool_request_queue
         )
+        
+    def popItem(self, request_queue, index):
+        while True:
+            item = request_queue.pop(index)
+            if item:
+                return item
+            time.sleep(0.1)
 
     def run_llm_syscall(self):
         while self.active:
@@ -65,14 +72,18 @@ class FIFOScheduler(Scheduler):
                     time.sleep(0.1)
                     continue
                 
-                print(llm_syscall)
+                # if llm_syscall is None:
+                #     time.sleep(0.1)
+                #     continue
+                
+                # print(f"llm_syscall is detected: {llm_syscall}")
                 
                 llm_syscall.set_status("executing")
                 self.logger.log(
                     f"{llm_syscall.agent_name} is executing. \n", "execute"
                 )
                 llm_syscall.set_start_time(time.time())
-                print(self.llms)
+                # print(self.llms)
                 response = self.llms[0].address_syscall(llm_syscall)
                 llm_syscall.set_response(response)
 
@@ -89,13 +100,9 @@ class FIFOScheduler(Scheduler):
         while self.active:
             try:
                 # wait at a fixed time interval, if there is nothing received in the time interval, it will raise Empty
-                memory_syscall = self.memory_request_queue.pop(0)
-
-                if memory_syscall is None:
-                    time.sleep(0.1)
-                    continue
+                memory_syscall = self.popItem(self.memory_request_queue, 0)
                 
-                print(memory_syscall)
+                # print(memory_syscall)
                 
                 memory_syscall.set_status("executing")
                 self.logger.log(
@@ -119,11 +126,7 @@ class FIFOScheduler(Scheduler):
     def run_storage_syscall(self):
         while self.active:
             try:
-                storage_syscall = self.storage_request_queue.pop(0)
-
-                if storage_syscall is None:
-                    time.sleep(0.1)
-                    continue
+                storage_syscall = self.popItem(self.storage_request_queue, 0)
                 
                 print(storage_syscall)
                 
@@ -154,13 +157,13 @@ class FIFOScheduler(Scheduler):
     def run_tool_syscall(self):
         while self.active:
             try:
+                # tool_syscall = self.popItem(self.tool_request_queue, 0)
                 tool_syscall = self.tool_request_queue.pop(0)
-
+                
                 if tool_syscall is None:
                     time.sleep(0.1)
                     continue
-                
-                print(tool_syscall)
+                # print(tool_syscall)
                 
                 tool_syscall.set_status("executing")
 
@@ -173,8 +176,8 @@ class FIFOScheduler(Scheduler):
                 tool_syscall.set_status("done")
                 tool_syscall.set_end_time(time.time())
 
-            except Empty:
-                pass
+            # except Empty:
+            #     pass
 
             except Exception:
                 traceback.print_exc()
